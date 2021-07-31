@@ -49,16 +49,18 @@ void unlockPlug(int plug)
 
 void togglePlug(int plug)
 {
-	if(plugState[plug])
-	{
-		gpioWrite(gpios[plug],GPIO_LOW);
-		plugState[plug] = false;
-		printf("Switched %d to LOW\n", plug + 1);
-		return;
-	}
-	gpioWrite(gpios[plug], GPIO_HIGH);
-	plugState[plug] = true;
-	printf("Switched %d to HIGH\n", plug + 1);
+	setPlugState(plug, !getPlugState(plug));
+}
+
+bool getPlugState(int plug)
+{
+	return plugState[plug];
+}
+
+void setPlugState(int plug, bool state)
+{
+	gpioWrite(gpios[plug], state ? GPIO_HIGH : GPIO_LOW);
+	plugState[plug] = state;
 }
 
 void *timer_thread_main(void *data)
@@ -82,7 +84,6 @@ void *timer_thread_main(void *data)
 		endTime[i] = (i == 1 ? 23 : 24) - 2;
 	}
 
-	printf("[TIMER THREAD] Started!\n");
 	while(appRunning())
 	{
 		if(clock_gettime(CLOCK_TAI, &curTick) == -1)
@@ -103,9 +104,9 @@ void *timer_thread_main(void *data)
 
 			if(hour >= startTime[i] && hour < endTime[i])
 			{
-				if(!plugState[i])
+				if(!getPlugState(i))
 				{
-					gpioWrite(gpios[i], GPIO_HIGH);
+					setPlugState(i, true);
 
 					unsigned int sec = curTick.tv_sec % SECS_IN_MIN;
 					unsigned int min = (curTick.tv_sec % SECS_IN_HOUR) / 60;
@@ -114,14 +115,13 @@ void *timer_thread_main(void *data)
 						thour -=24;
 
 					printf("[TIMER_THREAD] Turned on plug #%d at %02d:%02d:%02d:%09d!\n", i + 1, thour, min, sec, curTick.tv_nsec);
-					plugState[i] = true;
 				}
 			}
 			else
 			{
-				if(plugState[i])
+				if(getPlugState(i))
 				{
-					gpioWrite(gpios[i], GPIO_LOW);
+					setPlugState(i, false);
 
 					unsigned int sec = curTick.tv_sec % SECS_IN_MIN;
 					unsigned int min = (curTick.tv_sec % SECS_IN_HOUR) / 60;
@@ -130,7 +130,6 @@ void *timer_thread_main(void *data)
 						thour -=24;
 
 					printf("[TIMER_THREAD] Turned off plug #%d at %02d:%02d:%02d:%09d!\n", i + 1, thour, min, sec, curTick.tv_nsec);
-					plugState[i] = false;
 				}
 			}
 

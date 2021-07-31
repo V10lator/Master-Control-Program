@@ -28,7 +28,10 @@ void modeSwitchFromManual()
 void modeManual(uint16_t buttons)
 {
 	if(buttons & BUTTON_ONOFF)
+	{
 		togglePlug(manualChan);
+		displaySetOn(getPlugState(manualChan));
+	}
 	else if(buttons & BUTTON_CANCEL)
 	{
 		modeSwitchFromManual();
