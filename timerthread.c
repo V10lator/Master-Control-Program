@@ -8,6 +8,7 @@
 
 #include "minimal_gpio.h"
 
+#include "threadutils.h"
 #include "timerthread.h"
 
 #define GPIO_PLUG1	17
@@ -77,12 +78,12 @@ void *timer_thread_main(void *data)
 	bool *fap = &fa;
 	for(int i = 0; i < 4; i++)
 	{
-		startTime[i] = i == 0 ? (7-2) : (i == 1 ? (8-2) : (i == 2 ? (20-2) : (6-2)));
+		startTime[i] = i == 0 ? (6-2) : (i == 1 ? (7-2) : (i == 2 ? (20-2) : (6-2)));
 		endTime[i] = (i == 1 ? 23 : 24) - 2;
 	}
 
 	printf("[TIMER THREAD] Started!\n");
-	while(true)
+	while(appRunning())
 	{
 		if(clock_gettime(CLOCK_TAI, &curTick) == -1)
 		{

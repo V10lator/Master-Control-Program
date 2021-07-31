@@ -5,6 +5,7 @@
 #include "mcp23017.h"
 
 #include "buttonhandler.h"
+#include "modeAuto.h"
 #include "modeManual.h"
 
 #define BUTTON_PM_TIMESET	0x0040
@@ -49,18 +50,8 @@ static inline void internalHandleButtons(uint16_t buttons)
 		printf("[BUTTON HANDLER] Pressed: Cancel\n");
 }
 
-void modeTimeset(uint16_t buttons)
-{
-	internalHandleButtons(buttons);
-}
-void modeAuto(uint16_t buttons)
-{
-	internalHandleButtons(buttons);
-}
-void modeOnce(uint16_t buttons)
-{
-	internalHandleButtons(buttons);
-}
+#define modeTimeset internalHandleButtons
+#define modeOnce internalHandleButtons
 void modeWeekly(bool first, uint16_t buttons)
 {
 	internalHandleButtons(buttons);
@@ -112,10 +103,13 @@ void handleButtons()
 	{
 		switch(tmp)
 		{
+			case BUTTON_PM_AUTO:
+				modeSwitchFromAuto();
+				break;
 			case BUTTON_PM_MANUAL:
 				modeSwitchFromManual();
+				break;
 			case BUTTON_PM_TIMESET:
-			case BUTTON_PM_AUTO:
 			case BUTTON_PM_ONCE:
 			case BUTTON_PM_WEEKLY1:
 			case BUTTON_PM_WEEKLY2:
@@ -124,10 +118,13 @@ void handleButtons()
 
 		switch(progMode)
 		{
+			case BUTTON_PM_AUTO:
+				modeSwitchToAuto();
+				break;
 			case BUTTON_PM_MANUAL:
 				modeSwitchToManual();
+				break;
 			case BUTTON_PM_TIMESET:
-			case BUTTON_PM_AUTO:
 			case BUTTON_PM_ONCE:
 			case BUTTON_PM_WEEKLY1:
 			case BUTTON_PM_WEEKLY2:

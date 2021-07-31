@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include "buttonhandler.h"
+#include "display.h"
 #include "modeManual.h"
 #include "timerthread.h"
 
@@ -13,11 +14,15 @@ void modeSwitchToManual()
 {
 	while(!tryLockPlug(manualChan))
 		continue;
+
+	displayEnableTime();
+	displaySetChannel(manualChan + 1);
 }
 
 void modeSwitchFromManual()
 {
 	unlockPlug(manualChan);
+	displaySetChannel(DISPLAY_CHANNEL_INVALID);
 }
 
 void modeManual(uint16_t buttons)
