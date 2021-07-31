@@ -94,6 +94,10 @@ void *timer_thread_main(void *data)
 		}
 
 		localtime_r(&(curTick.tv_sec), &timeStruct);
+		if(timeStruct.tm_isdst == 0)
+			timeStruct.tm_hour++;
+		else if(timeStruct.tm_hour == 0)
+			timeStruct.tm_hour = 24;
 
 		for(int i = 0; i < 4; i++)
 		{
@@ -108,7 +112,13 @@ void *timer_thread_main(void *data)
 				if(!getPlugState(i))
 				{
 					setPlugState(i, true);
-					printf("[TIMER_THREAD] Turned on plug #%d at %02d:%02d:%02d:%09d!\n", i + 1, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, curTick.tv_nsec);
+					int th = timeStruct.tm_hour;
+					if(timeStruct.tm_isdst == 0)
+						th--;
+					else if(th == 24)
+						th = 0;
+
+					printf("[TIMER_THREAD] Turned on plug #%d at %02d:%02d:%02d:%09d %02d.%02d.%d!\n", i + 1, th, timeStruct.tm_min, timeStruct.tm_sec, curTick.tv_nsec, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900);
 				}
 			}
 			else
@@ -116,7 +126,13 @@ void *timer_thread_main(void *data)
 				if(getPlugState(i))
 				{
 					setPlugState(i, false);
-					printf("[TIMER_THREAD] Turned off plug #%d at %02d:%02d:%02d:%09d!\n", i + 1, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, curTick.tv_nsec);
+					int th = timeStruct.tm_hour;
+					if(timeStruct.tm_isdst == 0)
+						th--;
+					else if(th == 24)
+						th = 0;
+
+					printf("[TIMER_THREAD] Turned off plug #%d at %02d:%02d:%02d:%09d %02d.%02d.%d!\n", i + 1, th, timeStruct.tm_min, timeStruct.tm_sec, curTick.tv_nsec, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900);
 				}
 			}
 
