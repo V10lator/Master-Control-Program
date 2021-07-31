@@ -17,12 +17,14 @@ void modeSwitchToManual()
 
 	displayEnableTime();
 	displaySetChannel(manualChan + 1);
+	displaySetOn(getPlugState(manualChan));
 }
 
 void modeSwitchFromManual()
 {
 	unlockPlug(manualChan);
 	displaySetChannel(DISPLAY_CHANNEL_INVALID);
+	displaySetOn(false);
 }
 
 void modeManual(uint16_t buttons)
