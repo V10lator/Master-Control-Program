@@ -74,8 +74,10 @@ void *timer_thread_main(void *data)
 	struct timespec lastTick;
 	struct timespec curTick;
 	unsigned int hour;
-	unsigned int startTime[4];
-	unsigned int endTime[4];
+	unsigned int startTimeH[4];
+	unsigned int endTimeH[4];
+	unsigned int startTimeM[4];
+	unsigned int endTimeM[4];
 	bool fa = false;
 	bool *fap = &fa;
 	struct tm timeStruct;
@@ -85,8 +87,10 @@ void *timer_thread_main(void *data)
 	for(int i = 0; i < 4; i++)
 	{
 		// Winter time!
-		startTime[i] = (i == 0 || i == 3) ? 5 : (i == 1 ? 6 : 19);
-		endTime[i] = i == 1 ? 22 : 23;
+		startTimeH[i] = i == 2 ? 19 : 5;
+		endTimeH[i] = i == 1 ? 22 : 23;
+
+		startTimeM[i] = endTimeM[i] = i == 1 ? 30 : 0;
 	}
 
 	while(appRunning())
@@ -107,10 +111,10 @@ void *timer_thread_main(void *data)
 				continue;
 			}
 
-			st = startTime[i];
-			et = endTime[i];
+			st = startTimeH[i];
+			et = endTimeH[i];
 			if(timeStruct.tm_isdst > 0)
-			{
+				{
 				if(++st == 24)
 					st = 0;
 
@@ -121,13 +125,38 @@ void *timer_thread_main(void *data)
 			on = st == et;
 			if(!on)
 			{
-				if(st < et)
-					on = timeStruct.tm_hour >= st && timeStruct.tm_hour < et;
+				on = timeStruct.tm_hour == st;
+				if(on)
+					on = timeStruct.tm_min >= startTimeM[i];
 				else
 				{
-					on = timeStruct.tm_hour >= st;
-					if(!on)
-						on = timeStruct.tm_hour < et;
+					on = timeStruct.tm_hour == et;
+					if(on)
+						on = timeStruct.tm_min < endTimeM[i];
+					else if(st < et)
+						on = timeStruct.tm_hour > st && timeStruct.tm_hour < et;
+					else
+					{
+						on = timeStruct.tm_hour > st;
+						if(!on)
+							on = timeStruct.tm_hour < et;
+					}
+				}
+			}
+			else
+			{
+				on = startTimeM[i] == endTimeM[i];
+				if(!on)
+				{
+					on = startTimeM[i] < endTimeM[i];
+					if(on)
+						on = timeStruct.tm_min >= startTimeM[i] && timeStruct.tm_min < endTimeM[i];
+					else
+					{
+						on = startTimeM[i] >= timeStruct.tm_min;
+						if(!on)
+							on = timeStruct.tm_min < endTimeM[i];
+					}
 				}
 			}
 
