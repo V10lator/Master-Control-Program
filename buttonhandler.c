@@ -52,7 +52,7 @@ static inline void internalHandleButtons(uint16_t buttons)
 
 #define modeTimeset internalHandleButtons
 #define modeOnce internalHandleButtons
-void modeWeekly(bool first, uint16_t buttons)
+static void modeWeekly(bool first, uint16_t buttons)
 {
 	internalHandleButtons(buttons);
 }

@@ -18,7 +18,7 @@
 pthread_t timer_thread;
 bool exiting = false;
 
-void signalHandler(int signal)
+static void signalHandler(int signal)
 {
 //	switch(signal)
 //	{
