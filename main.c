@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "mcp23017.h"
 #include "minimal_gpio.h"
 
 #include "buttonhandler.h"
@@ -28,6 +29,7 @@ static void signalHandler(int signal)
 			{
 				printf("[MASTER CONTROL PROGRAM] Disabling!\n");
 				stopThreads();
+				close_mcp23017();
 				pthread_join(timer_thread, NULL);
 				disableDisplay();
 				exiting = true;
