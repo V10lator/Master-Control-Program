@@ -1,9 +1,12 @@
+#include <limits.h>
 #include <pthread.h>
+#include <sched.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/mman.h>
 
 #include "mcp23017.h"
 #include "minimal_gpio.h"
@@ -45,8 +48,28 @@ int main()
 	if(!gpioInitialise() || !initButtonhandler() || !initDisplay())
 		return 1;
 
+	pthread_attr_t attr;
+	struct sched_param param;
+
+	/* Lock memory */
+	if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1) {
+		printf("mlockall failed: %m\n");
+		return 1;
+	}
+
+	if(pthread_attr_init(&attr) || pthread_attr_setschedpolicy(&attr, SCHED_FIFO))
+	{
+		//TODO
+	}
+
+	param.sched_priority = 80;
+	if(pthread_attr_setschedparam(&attr, &param) || pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED))
+	{
+		//TODO
+	}
+
 	for(int i = 0; i < 4; i++)
-		if(pthread_create(&timer_thread[i], NULL, timer_thread_main, (void *)i) != 0)
+		if(pthread_create(&timer_thread[i], &attr, timer_thread_main, (void *)i) != 0)
 		{
 			stopThreads();
 			disableDisplay();
