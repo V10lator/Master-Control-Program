@@ -15,8 +15,8 @@
 #define BUTTON_PM_WEEKLY1	0x0004
 #define BUTTON_PM_WEEKLY2	0x0002
 
-uint16_t progMode = 0x0000;
-bool oldButton[10];
+static uint16_t progMode = 0x0000;
+static bool oldButton[10];
 
 bool initButtonhandler()
 {

@@ -14,9 +14,9 @@
 
 #include "mcp23017.h"
 
-int mcpFd;
+static int mcpFd;
 static const uint8_t mcp23017_addy = 0x12;
-uint16_t mcp_old_state = 0x0000;
+static uint16_t mcp_old_state = 0x0000;
 
 bool initialize_mcp23017()
 {

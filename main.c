@@ -16,8 +16,8 @@
 #define SLICE_TIME 62500000 // 16 slices / sec
 //#define SLICE_TIME 125000000 // 8 slices / sec
 
-pthread_t timer_thread;
-bool exiting = false;
+static pthread_t timer_thread[4];
+static bool exiting = false;
 
 static void signalHandler(int signal)
 {
@@ -30,7 +30,8 @@ static void signalHandler(int signal)
 				printf("[MASTER CONTROL PROGRAM] Disabling!\n");
 				stopThreads();
 				close_mcp23017();
-				pthread_join(timer_thread, NULL);
+				for(int i = 0; i < 4; i++)
+					pthread_join(timer_thread[i], NULL);
 				disableDisplay();
 				exiting = true;
 			}
@@ -45,7 +46,7 @@ int main()
 		return 1;
 
 	for(int i = 0; i < 4; i++)
-		if(pthread_create(&timer_thread, NULL, timer_thread_main, (void *)i) != 0)
+		if(pthread_create(&timer_thread[i], NULL, timer_thread_main, (void *)i) != 0)
 		{
 			stopThreads();
 			disableDisplay();
