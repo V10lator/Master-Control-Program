@@ -6,7 +6,7 @@
 #include "buttonhandler.h"
 #include "display.h"
 #include "modeManual.h"
-#include "timerthread.h"
+#include "plugmanager.h"
 
 static int manualChan = 0;
 

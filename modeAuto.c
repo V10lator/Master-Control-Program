@@ -2,7 +2,7 @@
 
 #include "display.h"
 #include "modeAuto.h"
-#include "timerthread.h"
+#include "plugmanager.h"
 
 void modeAuto(uint16_t buttons)
 {

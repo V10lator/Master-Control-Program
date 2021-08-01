@@ -1,118 +1,53 @@
 #include <pthread.h>
-#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
-#include "minimal_gpio.h"
-
+#include "plugmanager.h"
 #include "threadutils.h"
 #include "timerthread.h"
 
-#define GPIO_PLUG1	17
-#define GPIO_PLUG2	18
-#define GPIO_PLUG3	22
-#define GPIO_PLUG4	23
-
-#define GPIO_LOW	true
-#define GPIO_HIGH	false
-
-#define SECS_IN_MIN	60
-#define SECS_IN_HOUR	(60 * SECS_IN_MIN)
-#define SECS_IN_DAY	(24 * SECS_IN_HOUR)
-
 #define TIMER_FREQUENCY_NS 1000000 // 1 ms
 
-volatile static atomic_bool plugLocked[4] = { false, false, false, false };
-volatile static atomic_bool plugState [4];
-
-static const unsigned int gpios[4] = { GPIO_PLUG1, GPIO_PLUG2, GPIO_PLUG3, GPIO_PLUG4 };
-
-static inline void gpioSetup(unsigned int gpio)
-{
-	gpioSetMode(gpio, GPIO_MODE_OUTPUT);
-	gpioWrite(gpio, GPIO_LOW);
-}
-
-bool tryLockPlug(int plug)
-{
-	bool fa = false;
-	return atomic_compare_exchange_weak(plugLocked + plug, &fa, true);
-}
-
-void unlockPlug(int plug)
-{
-	plugLocked[plug] = false;
-}
-
-void togglePlug(int plug)
-{
-	setPlugState(plug, !getPlugState(plug));
-}
-
-bool getPlugState(int plug)
-{
-	return plugState[plug];
-}
-
-void setPlugState(int plug, bool state)
-{
-	gpioWrite(gpios[plug], state ? GPIO_HIGH : GPIO_LOW);
-	plugState[plug] = state;
-}
+static const unsigned int startTimeH[4] = { 5, 5, 19, 5 };
+static const unsigned int startTimeM[4] = { 0, 30, 0, 0 };
+static const unsigned int endTimeH[4] = { 23, 22, 23, 23 };
+static const unsigned int endTimeM[4] = { 0, 30, 0, 0 };
 
 void *timer_thread_main(void *data)
 {
-	for(int i = 0; i < 4; i++)
-	{
-		gpioSetup(gpios[i]);
-		plugState[i] = false;
-	}
+	int plug = (int)data;
+	setupPlug(plug);
 
 	struct timespec lastTick;
 	struct timespec curTick;
+	struct tm timeStruct;
 	unsigned int hour;
-	unsigned int startTimeH[4];
-	unsigned int endTimeH[4];
-	unsigned int startTimeM[4];
-	unsigned int endTimeM[4];
+	bool on;
 	bool fa = false;
 	bool *fap = &fa;
-	struct tm timeStruct;
 	int st;
 	int et;
-	bool on;
-	for(int i = 0; i < 4; i++)
-	{
-		// Winter time!
-		startTimeH[i] = i == 2 ? 19 : 5;
-		endTimeH[i] = i == 1 ? 22 : 23;
 
-		startTimeM[i] = endTimeM[i] = i == 1 ? 30 : 0;
-	}
+//	printf("[TIMER THREAD #%d] Ready!\n", plug + 1);
 
 	while(appRunning())
 	{
 		if(clock_gettime(CLOCK_REALTIME, &curTick) == -1)
 		{
-			fprintf(stderr, "[TIMER THREAD] Error getting realtime!\n");
-			continue;
+			fprintf(stderr, "[TIMER THREAD #%d] Error getting realtime!\n", plug + 1);
+			stopThreads();
+			break;
 		}
 
 		localtime_r(&(curTick.tv_sec), &timeStruct);
 
-		for(int i = 0; i < 4; i++)
+		if(tryLockPlugStrong(plug))
 		{
-			if(!atomic_compare_exchange_strong(plugLocked + i, fap, true))
-			{
-				fa = false;
-				continue;
-			}
-
-			st = startTimeH[i];
-			et = endTimeH[i];
+			st = startTimeH[plug];
+			et = endTimeH[plug];
 			if(timeStruct.tm_isdst > 0)
 			{
 				if(++st == 24)
@@ -127,12 +62,12 @@ void *timer_thread_main(void *data)
 			{
 				on = timeStruct.tm_hour == st;
 				if(on)
-					on = timeStruct.tm_min >= startTimeM[i];
+					on = timeStruct.tm_min >= startTimeM[plug];
 				else
 				{
 					on = timeStruct.tm_hour == et;
 					if(on)
-						on = timeStruct.tm_min < endTimeM[i];
+							on = timeStruct.tm_min < endTimeM[plug];
 					else if(st < et)
 						on = timeStruct.tm_hour > st && timeStruct.tm_hour < et;
 					else
@@ -145,57 +80,58 @@ void *timer_thread_main(void *data)
 			}
 			else
 			{
-				on = startTimeM[i] == endTimeM[i];
+				on = startTimeM[plug] == endTimeM[plug];
 				if(!on)
 				{
-					on = startTimeM[i] < endTimeM[i];
+					on = startTimeM[plug] < endTimeM[plug];
 					if(on)
-						on = timeStruct.tm_min >= startTimeM[i] && timeStruct.tm_min < endTimeM[i];
+						on = timeStruct.tm_min >= startTimeM[plug] && timeStruct.tm_min < endTimeM[plug];
 					else
 					{
-						on = startTimeM[i] >= timeStruct.tm_min;
+						on = startTimeM[plug] >= timeStruct.tm_min;
 						if(!on)
-							on = timeStruct.tm_min < endTimeM[i];
+							on = timeStruct.tm_min < endTimeM[plug];
 					}
 				}
 			}
 
 			if(on)
 			{
-				if(!getPlugState(i))
+				if(!getPlugState(plug))
 				{
-					setPlugState(i, true);
-					printf("[TIMER_THREAD] Turned on plug #%d at %02d.%02d.%d %02d:%02d:%02d:%09d!\n", i + 1, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, curTick.tv_nsec);
+					setPlugState(plug, true);
+					printf("[TIMER_THREAD #%d] Turned on plug at %02d.%02d.%d %02d:%02d:%02d:%09d!\n", plug + 1, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, curTick.tv_nsec);
 				}
 			}
 			else
 			{
-				if(getPlugState(i))
+				if(getPlugState(plug))
 				{
-					setPlugState(i, false);
-					printf("[TIMER_THREAD] Turned off plug #%d at %02d.%02d.%d %02d:%02d:%02d:%09d!\n", i + 1, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, curTick.tv_nsec);
+					setPlugState(plug, false);
+					printf("[TIMER_THREAD #%d] Turned off plug at %02d.%02d.%d %02d:%02d:%02d:%09d!\n", plug + 1, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, curTick.tv_nsec);
 				}
 			}
 
-			unlockPlug(i);
+			unlockPlug(plug);
 		}
 
 		if(clock_gettime(CLOCK_REALTIME, &lastTick) == -1)
-               	{
-                       	fprintf(stderr, "[TIMER_THREAD] Error getting time!\n");
-                        continue;
-                }
+		{
+			fprintf(stderr, "[TIMER_THREAD #%d] Error getting time!\n", plug + 1);
+			stopThreads();
+			break;;
+		}
 
-                lastTick.tv_sec -= curTick.tv_sec;
-                if(lastTick.tv_sec != 0)
-                        continue;
+		lastTick.tv_sec -= curTick.tv_sec;
+		if(lastTick.tv_sec != 0)
+			continue;
 
-                lastTick.tv_nsec -= curTick.tv_nsec;
-                if(lastTick.tv_nsec >= TIMER_FREQUENCY_NS)
-                        continue;
+		lastTick.tv_nsec -= curTick.tv_nsec;
+		if(lastTick.tv_nsec >= TIMER_FREQUENCY_NS)
+			continue;
 
-                lastTick.tv_nsec = TIMER_FREQUENCY_NS - lastTick.tv_nsec;
-                nanosleep(&lastTick, &curTick);
+		lastTick.tv_nsec = TIMER_FREQUENCY_NS - lastTick.tv_nsec;
+		nanosleep(&lastTick, &curTick);
 	}
 
 	pthread_exit(NULL);

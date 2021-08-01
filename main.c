@@ -44,11 +44,13 @@ int main()
 	if(!gpioInitialise() || !initButtonhandler() || !initDisplay())
 		return 1;
 
-	if(pthread_create(&timer_thread, NULL, timer_thread_main, NULL) != 0)
-	{
-		disableDisplay();
-		return 2;
-	}
+	for(int i = 0; i < 4; i++)
+		if(pthread_create(&timer_thread, NULL, timer_thread_main, (void *)i) != 0)
+		{
+			stopThreads();
+			disableDisplay();
+			return 2;
+		}
 
 	signal(SIGINT,signalHandler);
 	signal(SIGTERM,signalHandler);
