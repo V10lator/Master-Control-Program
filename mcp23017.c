@@ -34,7 +34,6 @@ bool initialize_mcp23017()
 		return false;
 	}
 
-	fflush(stdout);
 	uint8_t buffer[] = { 0x15,
 		0x00, 0xFF,	// 0x00 - Set ports as inputs (IODIR)
 		0xFF, 0xFF,	// 0x02 - Set active-low (IOPOL)

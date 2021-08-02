@@ -130,3 +130,12 @@ bool gpioInitialise(void)
    }
    return true;
 }
+
+void shutdownGpio()
+{
+	if(gpioReg != MAP_FAILED)
+	{
+		munmap((void *)gpioReg, GPIO_LEN);
+		gpioReg = MAP_FAILED;
+	}
+}

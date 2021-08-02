@@ -26,6 +26,7 @@ static volatile atomic_bool exiting = false;
 static inline void cleanup()
 {
 	close_mcp23017();
+	shutdownGpio();
 	disableDisplay();
 }
 

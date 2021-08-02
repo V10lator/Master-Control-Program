@@ -17,6 +17,7 @@ typedef enum
 } GPIO_MODE;
 
 bool gpioInitialise(void);
+void shutdownGpio();
 void gpioSetBank1(uint32_t bits);
 void gpioSetBank2(uint32_t bits);
 void gpioClearBank1(uint32_t bits);
