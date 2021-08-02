@@ -22,6 +22,7 @@ void modeSwitchToManual()
 
 void modeSwitchFromManual()
 {
+	setPlugTimed(manualChan);
 	unlockPlug(manualChan);
 	displaySetChannel(DISPLAY_CHANNEL_INVALID);
 	displaySetOn(false);
@@ -37,29 +38,26 @@ void modeManual(uint16_t buttons)
 	else if(buttons & BUTTON_CANCEL)
 	{
 		modeSwitchFromManual();
-		struct timespec toSleep;
-		toSleep.tv_sec = 0;
-		toSleep.tv_nsec = 4000000; // 4 MS
-		nanosleep(&toSleep, NULL);
 		modeSwitchToManual();
 	}
-	else
+	else if(!(buttons & BUTTON_CANCEL))
 	{
-		int oldChan = manualChan;
+		int tmpChan = manualChan;
 		if(buttons & BUTTON_CHN_P)
 		{
-			if(++manualChan == 4)
-				manualChan = 0;
+			if(++tmpChan == 4)
+				tmpChan = 0;
 		}
 		else if(buttons & BUTTON_CHN_M)
 		{
-			if(--manualChan == -1)
-				manualChan = 3;
+			if(--tmpChan == -1)
+				tmpChan = 3;
 		}
 		else
 			return;
 
-		unlockPlug(oldChan);
+		modeSwitchFromManual();
+		manualChan = tmpChan;
 		modeSwitchToManual();
 	}
 }

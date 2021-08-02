@@ -10,3 +10,4 @@ bool isPlugLocked(int plug);
 void togglePlug(int plug);
 bool getPlugState(int plug);
 void setPlugState(int plug, bool state);
+bool setPlugTimed(int plug);
