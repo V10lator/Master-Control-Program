@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <sched.h>
 #include <signal.h>
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,59 +21,58 @@
 //#define SLICE_TIME 125000000 // 8 slices / sec
 
 static pthread_t timer_thread[4];
-static bool exiting = false;
+static volatile atomic_bool exiting = false;
+
+static inline void cleanup()
+{
+	close_mcp23017();
+	disableDisplay();
+}
 
 static void signalHandler(int signal)
 {
-//	switch(signal)
-//	{
-//		case SIGINT:
-//		case SIGQUIT:
-			if(!exiting)
-			{
-				printf("[MASTER CONTROL PROGRAM] Disabling!\n");
-				stopThreads();
-				close_mcp23017();
-				for(int i = 0; i < 4; i++)
-					pthread_join(timer_thread[i], NULL);
-				disableDisplay();
-				exiting = true;
-			}
-//			return;
-//	}
+	bool fa = false;
+        if(atomic_compare_exchange_strong(&exiting, &fa, true))
+	{
+		stopThreads();
+		printf("[MASTER CONTROL PROGRAM] Disabling!\n");
+		cleanup();
+		for(int i = 0; i < 4; i++)
+			pthread_join(timer_thread[i], NULL);
+	}
 }
 
 int main()
 {
 	printf("[MASTER CONTROL PROGRAM]\n");
+
+	if(mlockall(MCL_CURRENT|MCL_FUTURE))
+	{
+		fprintf(stderr, "[MAIN] Error locking memory: %m\n");
+		return 1;
+	}
+
 	if(!gpioInitialise() || !initButtonhandler() || !initDisplay())
 		return 1;
 
 	pthread_attr_t attr;
 	struct sched_param param;
 
-	/* Lock memory */
-	if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1) {
-		printf("mlockall failed: %m\n");
-		return 1;
-	}
-
-	if(pthread_attr_init(&attr) || pthread_attr_setschedpolicy(&attr, SCHED_FIFO))
-	{
-		//TODO
-	}
-
 	param.sched_priority = 80;
-	if(pthread_attr_setschedparam(&attr, &param) || pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED))
+
+	if(pthread_attr_init(&attr) || pthread_attr_setschedpolicy(&attr, SCHED_FIFO) ||
+		pthread_attr_setschedparam(&attr, &param) || pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED))
 	{
-		//TODO
+		fprintf(stderr, "[MAIN] Error initializing realtime scheduling!\n");
+		cleanup();
+		return 1;
 	}
 
 	for(int i = 0; i < 4; i++)
 		if(pthread_create(&timer_thread[i], &attr, timer_thread_main, (void *)i) != 0)
 		{
 			stopThreads();
-			disableDisplay();
+			cleanup();
 			return 2;
 		}
 

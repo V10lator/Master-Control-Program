@@ -1,9 +1,8 @@
-#include <stdatomic.h>
 #include <stdbool.h>
 
 #include "threadutils.h"
 
-volatile static atomic_bool __appRunning = true;
+volatile static bool __appRunning = true;
 
 bool appRunning()
 {

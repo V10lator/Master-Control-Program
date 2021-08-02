@@ -21,23 +21,21 @@ void *timer_thread_main(void *data)
 	int plug = (int)data;
 	setupPlug(plug);
 
+	int tid = plug + 1;
 	struct timespec lastTick;
 	struct timespec curTick;
 	struct tm timeStruct;
-	unsigned int hour;
 	bool on;
-	bool fa = false;
-	bool *fap = &fa;
 	int st;
 	int et;
 
-//	printf("[TIMER THREAD #%d] Ready!\n", plug + 1);
+//	printf("[TIMER THREAD #%d] Ready!\n", tid);
 
 	while(appRunning())
 	{
 		if(clock_gettime(CLOCK_REALTIME, &curTick) == -1)
 		{
-			fprintf(stderr, "[TIMER THREAD #%d] Error getting realtime!\n", plug + 1);
+			fprintf(stderr, "[TIMER THREAD #%d] Error getting realtime!\n", tid);
 			stopThreads();
 			break;
 		}
@@ -100,7 +98,7 @@ void *timer_thread_main(void *data)
 				if(!getPlugState(plug))
 				{
 					setPlugState(plug, true);
-					printf("[TIMER_THREAD #%d] Turned on plug at %02d.%02d.%d %02d:%02d:%02d:%09d!\n", plug + 1, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, curTick.tv_nsec);
+					printf("[TIMER_THREAD #%d] Turned on plug at %02d.%02d.%d %02d:%02d:%02d:%09d!\n", tid, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, curTick.tv_nsec);
 				}
 			}
 			else
@@ -108,20 +106,14 @@ void *timer_thread_main(void *data)
 				if(getPlugState(plug))
 				{
 					setPlugState(plug, false);
-					printf("[TIMER_THREAD #%d] Turned off plug at %02d.%02d.%d %02d:%02d:%02d:%09d!\n", plug + 1, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, curTick.tv_nsec);
+					printf("[TIMER_THREAD #%d] Turned off plug at %02d.%02d.%d %02d:%02d:%02d:%09d!\n", tid, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, curTick.tv_nsec);
 				}
 			}
 
 			unlockPlug(plug);
 		}
 
-		if(clock_gettime(CLOCK_REALTIME, &lastTick) == -1)
-		{
-			fprintf(stderr, "[TIMER_THREAD #%d] Error getting time!\n", plug + 1);
-			stopThreads();
-			break;;
-		}
-
+		clock_gettime(CLOCK_REALTIME, &lastTick);
 		lastTick.tv_sec -= curTick.tv_sec;
 		if(lastTick.tv_sec != 0)
 			continue;
