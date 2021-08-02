@@ -15,89 +15,55 @@
 #include "mcp23017.h"
 
 static int mcpFd;
-static const uint8_t mcp23017_addy = 0x12;
+static const uint8_t mcp23017_addy[1] = { 0x12 };
 static uint16_t mcp_old_state = 0x0000;
 
 bool initialize_mcp23017()
 {
-	printf("[MCP20317 DRIVER] Opening i2c... ");
-	fflush(stdout);
 	mcpFd = open("/dev/i2c-1", O_RDWR);
 	if(mcpFd < 0)
 	{
-		printf("[ERROR]\n");
+		fprintf(stderr, "[MCP20317 DRIVER] Errorpening i2c!\n");
 		return false;
 	}
 
-	printf("[OK]\n[MCP20317 DRIVER] Opening MCP23017... ");
-	fflush(stdout);
 	if(ioctl(mcpFd, I2C_SLAVE, 0x20) < 0)
 	{
-		printf("[ERROR\n");
+		fprintf(stderr, "[MCP20317 DRIVER] Error opening MCP23017!\n");
 		close_mcp23017();
 		return false;
 	}
 
-	printf("[OK]\n[MCP20317 DRIVER] Setting 16 bit mode... ");
 	fflush(stdout);
-	uint8_t buffer[3];
-
-	buffer[0] = 0x15;
-	buffer[1] = 0x00;
+	uint8_t buffer[] = { 0x15,
+		0x00, 0xFF,	// 0x00 - Set ports as inputs (IODIR)
+		0xFF, 0xFF,	// 0x02 - Set active-low (IOPOL)
+		0x00, 0x00,	// 0x04 - Disable interrupts (INTEN)
+		0x00, 0x00, 	// 0x06 - Def values (DEFVAL unused)
+		0xFF, 0xFF,	// 0x08 - TODO: INTCON
+		0x00, 0x00,	// 0x0A - TODO: IOCON
+		0xFF, 0xFF,	// 0x0C - Enable pullups (GPPU)
+		0x00, 0x00, 	// 0x0E - TODO: INTF
+		0x00, 0x00,	// 0x10 - TODO: INTCAP
+		0x00, 0x00,	// 0x12 - Clear GPIO values (GPIO)
+		0x00, 0x00, 	// 0x14 - Clear latches (OLAT)
+	};
 
 	if(write(mcpFd, buffer, 2) != 2)
 	{
-		printf("[ERROR]\n");
+		fprintf(stderr, "[MCP20317 DRIVER] Error settig 16 bit mode!\n");
 		close_mcp23017();
 		return false;
 	}
 
-	// Disable interrupts (INTEN)
-	printf("[OK]\n[MCP20317 DRIVER] Disabling interrupts... ");
-	fflush(stdout);
-	buffer[0] = 0x04;
-	buffer[2] = 0x00;
-	if(write(mcpFd, buffer, 3) != 3)
-        {
-                printf("[ERROR]\n");
-		close_mcp23017();
-                return false;
-        }
-
-	// Set ports as inputs (IODIR)
-	printf("[OK]\n[MCP20317 DRIVER] Setting GPIO pins as input pins... ");
-	fflush(stdout);
 	buffer[0] = 0x00;
-	buffer[1] = buffer[2] = 0xFF;
-	if(write(mcpFd, buffer, 3) != 3)
-        {
-                printf("[ERROR]\n");
+	buffer[1] = 0xFF;
+	if(write(mcpFd, buffer, 21) != 21)
+	{
+		fprintf(stderr, "[MCP20317 DRIVER] Error sendin init sequence!\n");
 		close_mcp23017();
-                return false;
-        }
-
-	printf("[OK]\n[MCP20317 DRIVER] Enabling pullups... ");
-	fflush(stdout);
-	// Enable pullups (GPPU)
-	buffer[0] = 0x0C;
-	if(write(mcpFd, buffer, 3) != 3)
-        {
-                printf("[ERROR]\n");
-		close_mcp23017();
-                return false;
-        }
-
-	// Set active-low (IOPOL)
-	printf("[OK]\n[MCP20317 DRIVER] Setting active-low... ");
-	fflush(stdout);
-	buffer[0] = 0x02;
-	if(write(mcpFd, buffer, 3) != 3)
-        {
-                printf("[ERROR]\n");
-		close_mcp23017();
-                return false;
-        }
-        printf("[OK]\n");
+		return false;
+	}
 
 	return true;
 }
@@ -109,7 +75,7 @@ void close_mcp23017()
 
 uint16_t read_mcp23017()
 {
-	if(write(mcpFd, &mcp23017_addy, 1) != 1)
+	if(write(mcpFd, mcp23017_addy, 1) != 1)
 	{
 		fprintf(stderr, "[MCP20317 DRIVER] Error reading GPIO pins (1)!\n");
 		return mcp_old_state;
