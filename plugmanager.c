@@ -39,6 +39,11 @@ void unlockPlug(int plug)
 	plugLocked[plug] = false;
 }
 
+bool isPlugLocked(int plug)
+{
+	return plugLocked[plug];
+}
+
 void togglePlug(int plug)
 {
 	setPlugState(plug, !getPlugState(plug));

@@ -38,7 +38,10 @@ static void signalHandler(int signal)
 		printf("[MASTER CONTROL PROGRAM] Disabling!\n");
 		cleanup();
 		for(int i = 0; i < 4; i++)
+		{
+			pthread_kill(timer_thread[i], SIGUSR1);
 			pthread_join(timer_thread[i], NULL);
+		}
 	}
 }
 
@@ -82,7 +85,6 @@ int main()
 
 	struct timespec startTime;
 	struct timespec endTime;
-	struct timespec now;
 
 	while(appRunning())
 	{

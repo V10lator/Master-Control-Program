@@ -9,8 +9,6 @@
 #include "threadutils.h"
 #include "timerthread.h"
 
-#define TIMER_FREQUENCY_NS 1000000 // 1 ms
-
 static const unsigned int startTimeH[4] = { 5, 5, 19, 5 };
 static const unsigned int startTimeM[4] = { 0, 30, 0, 0 };
 static const unsigned int endTimeH[4] = { 23, 22, 23, 23 };
@@ -20,30 +18,26 @@ void *timer_thread_main(void *data)
 {
 	int plug = (int)data;
 	setupPlug(plug);
-
 	int tid = plug + 1;
-	struct timespec lastTick;
-	struct timespec curTick;
+	struct timespec timestamp;
 	struct tm timeStruct;
+	int st, et;
 	bool on;
-	int st;
-	int et;
-
-//	printf("[TIMER THREAD #%d] Ready!\n", tid);
 
 	while(appRunning())
 	{
-		if(clock_gettime(CLOCK_REALTIME, &curTick) == -1)
-		{
-			fprintf(stderr, "[TIMER THREAD #%d] Error getting realtime!\n", tid);
-			stopThreads();
-			break;
-		}
-
-		localtime_r(&(curTick.tv_sec), &timeStruct);
-
 		if(tryLockPlugStrong(plug))
 		{
+			if(clock_gettime(CLOCK_REALTIME, &timestamp) == -1)
+			{
+				fprintf(stderr, "[TIMER THREAD #%d] Error getting realtime!\n", tid);
+				stopThreads();
+				break;
+			}
+
+			localtime_r(&(timestamp.tv_sec), &timeStruct);
+			printf("[TIMER_THREAD #%d] --- %02d.%02d.%d %02d:%02d:%02d:%09ld!\n", tid, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, timestamp.tv_nsec);
+
 			st = startTimeH[plug];
 			et = endTimeH[plug];
 			if(timeStruct.tm_isdst > 0)
@@ -98,7 +92,7 @@ void *timer_thread_main(void *data)
 				if(!getPlugState(plug))
 				{
 					setPlugState(plug, true);
-					printf("[TIMER_THREAD #%d] Turned on plug at %02d.%02d.%d %02d:%02d:%02d:%09d!\n", tid, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, curTick.tv_nsec);
+					printf("[TIMER_THREAD #%d] Turned on plug at %02d.%02d.%d %02d:%02d:%02d:%09ld!\n", tid, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, timestamp.tv_nsec);
 				}
 			}
 			else
@@ -106,25 +100,20 @@ void *timer_thread_main(void *data)
 				if(getPlugState(plug))
 				{
 					setPlugState(plug, false);
-					printf("[TIMER_THREAD #%d] Turned off plug at %02d.%02d.%d %02d:%02d:%02d:%09d!\n", tid, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, curTick.tv_nsec);
+					printf("[TIMER_THREAD #%d] Turned off plug at %02d.%02d.%d %02d:%02d:%02d:%09ld!\n", tid, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, timestamp.tv_nsec);
 				}
 			}
 
 			unlockPlug(plug);
 		}
 
-		clock_gettime(CLOCK_REALTIME, &lastTick);
-		lastTick.tv_sec -= curTick.tv_sec;
-		if(lastTick.tv_sec != 0)
-			continue;
+		clock_gettime(CLOCK_REALTIME, &timestamp);
 
-		lastTick.tv_nsec -= curTick.tv_nsec;
-		if(lastTick.tv_nsec >= TIMER_FREQUENCY_NS)
-			continue;
-
-		lastTick.tv_nsec = TIMER_FREQUENCY_NS - lastTick.tv_nsec;
-		nanosleep(&lastTick, &curTick);
+		timestamp.tv_nsec = 1000000000ull - timestamp.tv_nsec;
+		timestamp.tv_sec = 59 - (timestamp.tv_sec % 60);
+		nanosleep(&timestamp, NULL);
 	}
 
 	pthread_exit(NULL);
 }
+
