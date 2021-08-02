@@ -56,8 +56,21 @@ int main()
 		return 1;
 	}
 
-	if(!gpioInitialise() || !initButtonhandler() || !initDisplay())
+	if(!initDisplay())
 		return 1;
+
+	if(!gpioInitialise())
+	{
+		disableDisplay();
+		return 1;
+	}
+
+	if(!initButtonhandler())
+	{
+		disableDisplay();
+		shutdownGpio();
+		return 1;
+	}
 
 	pthread_attr_t attr;
 	struct sched_param param;

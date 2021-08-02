@@ -59,7 +59,7 @@ bool initialize_mcp23017()
 	buffer[1] = 0xFF;
 	if(write(mcpFd, buffer, 21) != 21)
 	{
-		fprintf(stderr, "[MCP20317 DRIVER] Error sendin init sequence!\n");
+		fprintf(stderr, "[MCP20317 DRIVER] Error sending init sequence!\n");
 		close_mcp23017();
 		return false;
 	}
