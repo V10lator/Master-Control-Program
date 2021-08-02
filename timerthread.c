@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -14,10 +15,14 @@ static const unsigned int startTimeM[4] = { 0, 30, 0, 0 };
 static const unsigned int endTimeH[4] = { 23, 22, 23, 23 };
 static const unsigned int endTimeM[4] = { 0, 30, 0, 0 };
 
+static void dummyHandler(int signal) {};
+
 void *timer_thread_main(void *data)
 {
 	int plug = (int)data;
 	setupPlug(plug);
+	signal(SIGUSR1, dummyHandler);
+
 	int tid = plug + 1;
 	struct timespec timestamp;
 	struct tm timeStruct;
