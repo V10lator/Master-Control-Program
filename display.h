@@ -2,21 +2,22 @@
 
 #include <stdbool.h>
 
-#define DISPLAY_CHANNEL_INVALID	0
-#define DISPLAY_CHANNEL_1	1
-#define DISPLAY_CHANNEL_2	2
-#define DISPLAY_CHANNEL_3	3
-#define DISPLAY_CHANNEL_4	3
+typedef enum
+{
+	DISPLAY_CHANNEL_INVALID	= 0,
+	DISPLAY_CHANNEL_1	= 1,
+	DISPLAY_CHANNEL_2	= 2,
+	DISPLAY_CHANNEL_3	= 3,
+	DISPLAY_CHANNEL_4	= 4,
+} DISPLAY_CHANNEL;
 
+bool initDisplay();
+void disableDisplay();
 
-#define initDisplay() true
-#define disableDisplay()
+void displayEnableTime(bool enable);
 
-#define displayEnableTime()
-#define displayDisableTime()
+void displayShowTime(int hour, int minute, int second);
 
-#define displayShowTime(...)
+void displaySetChannel(DISPLAY_CHANNEL channel);
 
-#define displaySetChannel(...)
-
-#define displaySetOn(...)
+void displaySetOn(bool on);

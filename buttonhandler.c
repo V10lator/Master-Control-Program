@@ -52,7 +52,7 @@ static inline void internalHandleButtons(uint16_t buttons)
 
 #define modeTimeset internalHandleButtons
 #define modeOnce internalHandleButtons
-static void modeWeekly(bool first, uint16_t buttons)
+static inline void modeWeekly(bool first, uint16_t buttons)
 {
 	internalHandleButtons(buttons);
 }
@@ -61,6 +61,7 @@ void handleButtons()
 {
 	uint16_t buttons = read_mcp23017();
 	uint16_t tmp = 0x0000;
+	uint16_t oldProgMode = progMode;
 
 	// Program mode switch
 	if(buttons & BUTTON_PM_TIMESET && progMode != BUTTON_PM_TIMESET)
@@ -113,9 +114,13 @@ void handleButtons()
 			case BUTTON_PM_ONCE:
 			case BUTTON_PM_WEEKLY1:
 			case BUTTON_PM_WEEKLY2:
+			default:
 				break;
 		}
+	}
 
+	if(progMode != oldProgMode)
+	{
 		switch(progMode)
 		{
 			case BUTTON_PM_AUTO:
