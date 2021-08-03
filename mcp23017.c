@@ -74,7 +74,7 @@ bool initialize_mcp23017()
 	// We can't disable sequential mode in between a seqential WRITE operation, so we keep it activated
 	buffer[0] = 0x00;
 	buffer[1] = 0xFF;
-	if(write(mcpFd, buffer, 15) != 15)
+	if(write(mcpFd, buffer, sizeof(buffer)) != sizeof(buffer))
 	{
 		fprintf(stderr, "[MCP20317 DRIVER] Error sending init sequence!\n");
 		close_mcp23017();
