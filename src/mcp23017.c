@@ -83,8 +83,8 @@ bool initialize_mcp23017()
 
 	// From here on we won't do an sequential READ/WRITE anymore, so disable it
 	buffer[0] = 0x0A;
-	buffer[1] = buffer[2] = MCP_IOCON_BLOCK;
-	if(write(mcpFd, buffer, 3) != 3)
+	buffer[1] = MCP_IOCON_BLOCK;
+	if(write(mcpFd, buffer, 2) != 2)
 	{
 		fprintf(stderr, "[MCP20317 DRIVER] Error disabling sequential mode!\n");
 		close_mcp23017();
