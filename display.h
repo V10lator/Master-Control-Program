@@ -13,6 +13,7 @@ typedef enum
 
 bool initDisplay();
 void disableDisplay();
+void updateDisplay();
 
 void displayEnableTime(bool enable);
 

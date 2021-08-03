@@ -109,6 +109,7 @@ int main()
 		}
 
 		handleButtons();
+		updateDisplay();
 
 		if(clock_gettime(CLOCK_MONOTONIC_RAW, &endTime) != 0)
 		{
