@@ -14,7 +14,7 @@
 
 #include "mcp23017.h"
 
-static int mcpFd;
+static int mcpFd = NULL;
 static const uint8_t mcp23017_addy[1] = { 0x12 };
 static uint16_t mcp_old_state = 0x0000;
 
@@ -34,27 +34,44 @@ bool initialize_mcp23017()
 		return false;
 	}
 
+	// [ Bank | MIRROR | SEQOP | DISSLW | HAEN | ODR | INTPOL | NOT IMPL]
+	// [ BIT7 |        |       |        |      |     |        |   BIT0  ]
+	// [  0   |   1    |  0    |   0    |  0   |  1  |    0   |    0    ]
+	uint8_t iocon = 1 << 2;
+	iocon |= 1 << 6;
+
 	uint8_t buffer[] = { 0x15,
-		0x00, 0xFF,	// 0x00 - Set ports as inputs (IODIR)
+		iocon, 0xFF,	// 0x00 - Set ports as inputs (IODIR)
 		0xFF, 0xFF,	// 0x02 - Set active-low (IOPOL)
 		0x00, 0x00,	// 0x04 - Disable interrupts (INTEN)
 		0x00, 0x00, 	// 0x06 - Def values (DEFVAL unused)
-		0xFF, 0xFF,	// 0x08 - TODO: INTCON
-		0x00, 0x00,	// 0x0A - TODO: IOCON
+		0x00, 0x00,	// 0x08 - Compare against last value or def? (INTCON unused)
+		iocon, iocon,	// 0x0A - IOCON
 		0xFF, 0xFF,	// 0x0C - Enable pullups (GPPU)
-		0x00, 0x00, 	// 0x0E - TODO: INTF
-		0x00, 0x00,	// 0x10 - TODO: INTCAP
+		0x00, 0x00, 	// 0x0E - INTF - READ ONLY!
+		0x00, 0x00,	// 0x10 - INTCAP -READ ONLY!
 		0x00, 0x00,	// 0x12 - Clear GPIO values (GPIO)
 		0x00, 0x00, 	// 0x14 - Clear latches (OLAT)
 	};
 
+	// Set 16 bit mode from 8 bit
 	if(write(mcpFd, buffer, 2) != 2)
 	{
-		fprintf(stderr, "[MCP20317 DRIVER] Error settig 16 bit mode!\n");
+		fprintf(stderr, "[MCP20317 DRIVER] Error settig 16 bit mode (1)!\n");
 		close_mcp23017();
 		return false;
 	}
 
+	// Just to make sure: Set 16 bit mode from 16 bit
+	buffer[0] = 0x0A;
+	if(write(mcpFd, buffer, 2) != 2)
+	{
+		fprintf(stderr, "[MCP20317 DRIVER] Error settig 16 bit mode (2)!\n");
+		close_mcp23017();
+		return false;
+	}
+
+	// Now that we're in 16 bit mode: Overwrite ALL registers (full software reset)
 	buffer[0] = 0x00;
 	buffer[1] = 0xFF;
 	if(write(mcpFd, buffer, 23) != 23)
@@ -69,7 +86,11 @@ bool initialize_mcp23017()
 
 void close_mcp23017()
 {
-	close(mcpFd);
+	if(mcpFd != NULL)
+	{
+		close(mcpFd);
+		mcpFd = NULL;
+	}
 }
 
 uint16_t read_mcp23017()
