@@ -17,7 +17,7 @@ void modeSwitchToManual()
 
 	displayEnableTime(true);
 	displaySetChannel(manualChan + 1);
-	displaySetOn(getPlugState(manualChan));
+	displaySetOnOff(getPlugState(manualChan));
 }
 
 void modeSwitchFromManual()
@@ -25,7 +25,7 @@ void modeSwitchFromManual()
 	setPlugTimed(manualChan);
 	unlockPlug(manualChan);
 	displaySetChannel(DISPLAY_CHANNEL_INVALID);
-	displaySetOn(false);
+	displayDisableOnOff();
 	displayEnableTime(false);
 }
 
@@ -34,7 +34,7 @@ void modeManual(uint16_t buttons)
 	if(buttons & BUTTON_ONOFF)
 	{
 		togglePlug(manualChan);
-		displaySetOn(getPlugState(manualChan));
+		displaySetOnOff(getPlugState(manualChan));
 	}
 	else if(buttons & BUTTON_CANCEL)
 	{

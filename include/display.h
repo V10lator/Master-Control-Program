@@ -21,4 +21,5 @@ void displayShowTime(int hour, int minute, int second);
 
 void displaySetChannel(DISPLAY_CHANNEL channel);
 
-void displaySetOn(bool on);
+void displaySetOnOff(bool on);
+void displayDisableOnOff();

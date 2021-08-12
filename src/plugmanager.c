@@ -18,10 +18,10 @@ volatile static bool plugState [4];
 
 static const unsigned int gpios[4] = { GPIO_PLUG1, GPIO_PLUG2, GPIO_PLUG3, GPIO_PLUG4 };
 
-static const unsigned int startTimeH[4] = { 5, 5, 19, 5 };
-static const unsigned int startTimeM[4] = { 0, 30, 0, 0 };
-static const unsigned int endTimeH[4] = { 23, 22, 23, 23 };
-static const unsigned int endTimeM[4] = { 0, 30, 0, 0 };
+static const unsigned int startTimeH[4] = { 0, 5, 19, 5 };
+static const unsigned int startTimeM[4] = { 0, 0, 0, 0 };
+static const unsigned int endTimeH[4] = { 0, 23, 23, 23 };
+static const unsigned int endTimeM[4] = { 0, 0, 0, 0 };
 
 
 void setupPlug(int plug)

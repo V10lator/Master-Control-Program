@@ -4,10 +4,12 @@
 
 #include "display.h"
 
+#define DISPLAY_HEAT_PIN 0 //TODO
+
 bool displayInitialized = false;
 bool displayTimeEnabled = false;
 DISPLAY_CHANNEL displayChannel = DISPLAY_CHANNEL_INVALID;
-bool displayOn = false;
+unsigned int displayOnOff = 0;
 
 void updateDisplay()
 {
@@ -16,8 +18,6 @@ void updateDisplay()
 
 	if(displayTimeEnabled)
 	{
-		//TODO: Enable time grid
-
 		struct timespec timestamp;
 		struct tm timeStruct;
 		if(clock_gettime(CLOCK_REALTIME, &timestamp) == -1)
@@ -36,26 +36,24 @@ void updateDisplay()
 	else
 	{
 		//TODO: STUB
-		// Disable time grid
 	}
 
-	if(displayChannel != DISPLAY_CHANNEL_INVALID)
+	switch(displayChannel) // TODO
 	{
-		//TODO: StUB
-	}
-	else
-	{
-		//TODO: STUB
-		// Disable channel grid
+		case DISPLAY_CHANNEL_INVALID:
+		default:
+			break;
 	}
 
-	if(displayOn)
+	switch(displayOnOff)
 	{
-		//TODO: STUB
-	}
-	else
-	{
-		//TODO: STUB
+		case 1:
+			//TODO: Show "ON"
+		case 2:
+			//TODO: Show "OFF"
+		default:
+			//TODO: Disable on and off GPIOs
+			break;
 	}
 }
 
@@ -65,6 +63,13 @@ bool initDisplay()
 		return true;
 
 	printf("[DISPLAY MANAGER] Init: STUB!\n");
+
+	// Enable heath wire
+//	gpioSetMode(DISPLAY_HEAT_PIN, GPIO_MODE_OUTPUT);
+//	gpioWrite(DISPLAY_HEAT_PIN, true);
+
+	//TODO: Enable anode GPIOs
+
 	displayInitialized = true;
 	return true;
 }
@@ -75,6 +80,12 @@ void disableDisplay()
 		return;
 
 	printf("[DISPLAY MANAGER] Disable: STUB!\n");
+
+	// Disable heath wire
+//	gpioWrite(DISPLAY_HEAT_PIN, false);
+
+	//TODO: Disable anodes
+
 	displayInitialized = false;
 }
 
@@ -104,11 +115,21 @@ void displaySetChannel(DISPLAY_CHANNEL channel)
 //	printf("[DISPLAY MANAGER] Set channel (to %01d): STUB!\n", channel);
 }
 
-void displaySetOn(bool on)
+void displaySetOnOff(bool on)
 {
 	if(!displayInitialized)
 		return;
 
-	displayOn = on;
+	displayOnOff = on ? 1 : 2;
 	printf("[DISPLAY MANAGER] Set on (%s): STUB!\n", on ? "TRUE" : "FALSE");
+}
+
+void displayDisableOnOff()
+{
+	if(!displayInitialized)
+		return;
+
+	displayOnOff = 0;
+	printf("[DISPLAY MANAGER] Disable display on/off: STUB!\n");
+
 }
