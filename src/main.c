@@ -13,12 +13,12 @@
 #include "minimal_gpio.h"
 
 #include "buttonhandler.h"
+#include "config.h"
 #include "display.h"
 #include "threadutils.h"
 #include "timerthread.h"
 
 #define SLICE_TIME 62500000 // 16 slices / sec
-//#define SLICE_TIME 125000000 // 8 slices / sec
 
 static pthread_t timer_thread[4];
 static volatile atomic_bool exiting = false;
@@ -27,6 +27,7 @@ static inline void cleanup()
 {
 	close_mcp23017();
 	shutdownGpio();
+	deinitConfig();
 	disableDisplay();
 }
 
@@ -65,10 +66,18 @@ int main()
 		return 1;
 	}
 
+	if(!initConfig())
+	{
+		disableDisplay();
+		shutdownGpio();
+		return 1;
+	}
+
 	if(!initButtonhandler())
 	{
 		disableDisplay();
 		shutdownGpio();
+		deinitConfig();
 		return 1;
 	}
 
@@ -109,7 +118,7 @@ int main()
 		}
 
 		handleButtons();
-		updateDisplay();
+//		updateDisplay();
 
 		if(clock_gettime(CLOCK_MONOTONIC_RAW, &endTime) != 0)
 		{
