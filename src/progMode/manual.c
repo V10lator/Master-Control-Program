@@ -5,8 +5,8 @@
 
 #include "buttonhandler.h"
 #include "display.h"
-#include "modeManual.h"
 #include "plugmanager.h"
+#include "progMode/manual.h"
 
 static int manualChan = 0;
 

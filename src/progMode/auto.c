@@ -2,8 +2,8 @@
 #include <stdint.h>
 
 #include "display.h"
-#include "modeAuto.h"
 #include "plugmanager.h"
+#include "progMode/auto.h"
 
 void modeAuto(uint16_t buttons)
 {

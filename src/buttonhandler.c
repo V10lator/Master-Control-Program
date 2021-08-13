@@ -5,8 +5,8 @@
 #include "mcp23017.h"
 
 #include "buttonhandler.h"
-#include "modeAuto.h"
-#include "modeManual.h"
+#include "progMode/auto.h"
+#include "progMode/manual.h"
 
 #define BUTTON_PM_TIMESET	0x0040
 #define BUTTON_PM_MANUAL	0x0020
