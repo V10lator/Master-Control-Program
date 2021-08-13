@@ -17,6 +17,9 @@
 volatile static atomic_bool plugLocked[4] = { false, false, false, false };
 volatile static bool plugState [4];
 
+static volatile unsigned long long lastInterval[4] = { 0ull, 0ull, 0ull, 0ull };
+static volatile bool lastOn[4] = { false, false, false, false };
+
 static const unsigned int gpios[4] = { GPIO_PLUG1, GPIO_PLUG2, GPIO_PLUG3, GPIO_PLUG4 };
 
 void setupPlug(int plug)
@@ -143,9 +146,24 @@ bool setPlugDaily(const int plug, unsigned int startTimeH, const unsigned int st
 	return true;
 }
 
-bool setPlugInterval(int plug, CONFIG_MODE mode)
+bool setPlugInterval(int plug, const unsigned long long intervalOn, const unsigned long long intervalOff)
 {
-	// TODO
+	struct timespec now;
+	if(clock_gettime(CLOCK_TAI, &now) == -1)
+	{
+		fprintf(stderr, "[PLUG_MANAGER] Error getting realtime!\n");
+		return false;
+	}
+
+	if(now.tv_sec - lastInterval[plug] >= (lastOn[plug] ? intervalOff : intervalOn) * 60ull)
+	{
+		lastOn[plug] = !lastOn[plug];
+
+		setPlugState(plug, lastOn[plug]);
+		printf("[PLUG_MANAGER] Flipped plug #%d after %llu seconds!\n", plug + 1, now.tv_sec - lastInterval[plug]);
+		lastInterval[plug] = now.tv_sec;
+	}
+
 	return true;
 }
 
@@ -165,7 +183,7 @@ bool setPlugTimed(int plug)
 		case PROG_MODE_ONCE:
 			return setPlugOnce(plug, mode);
 		case PROG_MODE_INTERVAL:
-			return setPlugInterval(plug, mode);
+			return setPlugInterval(plug, mode.var1, mode.var2);
 		default:
 			return false;
 	}
