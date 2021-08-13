@@ -63,11 +63,10 @@ void setPlugState(int plug, bool state)
 	plugState[plug] = state;
 }
 
-bool setPlugDaily(const int plug, const unsigned int startTimeH, const unsigned int startTimeM, const unsigned int endTimeH, const unsigned int endTimeM)
+bool setPlugDaily(const int plug, unsigned int startTimeH, const unsigned int startTimeM, unsigned int endTimeH, const unsigned int endTimeM)
 {
 	struct timespec timestamp;
 	struct tm timeStruct;
-	int st, et;
 	bool on;
 
 	if(clock_gettime(CLOCK_REALTIME, &timestamp) == -1)
@@ -77,35 +76,33 @@ bool setPlugDaily(const int plug, const unsigned int startTimeH, const unsigned 
 	}
 
 	localtime_r(&(timestamp.tv_sec), &timeStruct);
-	st = startTimeH;
-	et = endTimeH;
 	if(timeStruct.tm_isdst > 0)
 	{
-		if(++st == 24)
-			st = 0;
+		if(++startTimeH == 24)
+			startTimeH = 0;
 
-		if(++et == 24)
-			et = 0;
+		if(++endTimeH == 24)
+			endTimeH = 0;
 	}
 
-	on = st == et;
+	on = startTimeH == endTimeH;
 	if(!on)
 	{
-		on = timeStruct.tm_hour == st;
+		on = timeStruct.tm_hour == startTimeH;
 		if(on)
 			on = timeStruct.tm_min >= startTimeM;
 		else
 		{
-			on = timeStruct.tm_hour == et;
+			on = timeStruct.tm_hour == endTimeH;
 			if(on)
 					on = timeStruct.tm_min < endTimeM;
-			else if(st < et)
-				on = timeStruct.tm_hour > st && timeStruct.tm_hour < et;
+			else if(startTimeH < endTimeH)
+				on = timeStruct.tm_hour > startTimeH && timeStruct.tm_hour < endTimeH;
 			else
 			{
-				on = timeStruct.tm_hour > st;
+				on = timeStruct.tm_hour > startTimeH;
 				if(!on)
-					on = timeStruct.tm_hour < et;
+					on = timeStruct.tm_hour < endTimeH;
 			}
 		}
 	}
