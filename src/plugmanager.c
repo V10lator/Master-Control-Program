@@ -6,6 +6,7 @@
 
 #include "minimal_gpio.h"
 
+#include "config.h"
 #include "plugmanager.h"
 
 #define GPIO_PLUG1	17
@@ -17,12 +18,6 @@ volatile static atomic_bool plugLocked[4] = { false, false, false, false };
 volatile static bool plugState [4];
 
 static const unsigned int gpios[4] = { GPIO_PLUG1, GPIO_PLUG2, GPIO_PLUG3, GPIO_PLUG4 };
-
-static const unsigned int startTimeH[4] = { 0, 5, 19, 5 };
-static const unsigned int startTimeM[4] = { 0, 0, 0, 0 };
-static const unsigned int endTimeH[4] = { 0, 23, 23, 23 };
-static const unsigned int endTimeM[4] = { 0, 0, 0, 0 };
-
 
 void setupPlug(int plug)
 {
@@ -68,7 +63,7 @@ void setPlugState(int plug, bool state)
 	plugState[plug] = state;
 }
 
-bool setPlugTimed(int plug)
+bool setPlugDaily(const int plug, const unsigned int startTimeH, const unsigned int startTimeM, const unsigned int endTimeH, const unsigned int endTimeM)
 {
 	struct timespec timestamp;
 	struct tm timeStruct;
@@ -82,8 +77,8 @@ bool setPlugTimed(int plug)
 	}
 
 	localtime_r(&(timestamp.tv_sec), &timeStruct);
-	st = startTimeH[plug];
-	et = endTimeH[plug];
+	st = startTimeH;
+	et = endTimeH;
 	if(timeStruct.tm_isdst > 0)
 	{
 		if(++st == 24)
@@ -98,12 +93,12 @@ bool setPlugTimed(int plug)
 	{
 		on = timeStruct.tm_hour == st;
 		if(on)
-			on = timeStruct.tm_min >= startTimeM[plug];
+			on = timeStruct.tm_min >= startTimeM;
 		else
 		{
 			on = timeStruct.tm_hour == et;
 			if(on)
-					on = timeStruct.tm_min < endTimeM[plug];
+					on = timeStruct.tm_min < endTimeM;
 			else if(st < et)
 				on = timeStruct.tm_hour > st && timeStruct.tm_hour < et;
 			else
@@ -116,17 +111,17 @@ bool setPlugTimed(int plug)
 	}
 	else
 	{
-		on = startTimeM[plug] == endTimeM[plug];
+		on = startTimeM == endTimeM;
 		if(!on)
 		{
-			on = startTimeM[plug] < endTimeM[plug];
+			on = startTimeM < endTimeM;
 			if(on)
-				on = timeStruct.tm_min >= startTimeM[plug] && timeStruct.tm_min < endTimeM[plug];
+				on = timeStruct.tm_min >= startTimeM && timeStruct.tm_min < endTimeM;
 			else
 			{
-				on = startTimeM[plug] >= timeStruct.tm_min;
+				on = startTimeM >= timeStruct.tm_min;
 				if(!on)
-					on = timeStruct.tm_min < endTimeM[plug];
+					on = timeStruct.tm_min < endTimeM;
 			}
 		}
 	}
@@ -149,4 +144,32 @@ bool setPlugTimed(int plug)
 	}
 
 	return true;
+}
+
+bool setPlugInterval(int plug, CONFIG_MODE mode)
+{
+	// TODO
+	return true;
+}
+
+bool setPlugOnce(int plug, CONFIG_MODE mode)
+{
+	// TODO
+	return true;
+}
+
+bool setPlugTimed(int plug)
+{
+	CONFIG_MODE mode = configGetMode(plug);
+	switch(mode.id)
+	{
+		case PROG_MODE_DAILY:
+			return setPlugDaily(plug, mode.var1, mode.var2, mode.var3, mode.var4);
+		case PROG_MODE_ONCE:
+			return setPlugOnce(plug, mode);
+		case PROG_MODE_INTERVAL:
+			return setPlugInterval(plug, mode);
+		default:
+			return false;
+	}
 }

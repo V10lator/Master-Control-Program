@@ -14,9 +14,39 @@ typedef struct
 
 #define MAX_CONFIG_SIZE sizeof(CONFIG)
 
-unsigned int confVer = 0;
 static volatile CONFIG *conf = NULL;
 static volatile bool changed = false;
+const CONFIG defConf = {
+				.version = 0,	// Version
+				.mode[0] = {	// Config mode array
+					.id = PROG_MODE_DAILY,
+					.var1 = 5,	// Start time hour
+					.var2 = 0,	// Start time minute
+					.var3 = 23,	// End time hour
+					.var4 = 0,	// End time minute
+				},
+				.mode[1] = {
+					.id = PROG_MODE_DAILY,
+					.var1 = 5,
+					.var2 = 0,
+					.var3 = 23,
+					.var4 = 0,
+				},
+				.mode[2] = {
+					.id = PROG_MODE_DAILY,
+					.var1 = 19,
+					.var2 = 0,
+					.var3 = 23,
+					.var4 = 0,
+				},
+				.mode[3] = {
+					.id = PROG_MODE_DAILY,
+					.var1 = 5,
+					.var2 = 0,
+					.var3 = 23,
+					.var4 = 0,
+				},
+			};
 
 bool initConfig()
 {
@@ -30,20 +60,19 @@ bool initConfig()
 			return false;
 		}
 
-		// Default values:
-		conf->version = confVer;
-		CONFIG_MODE mode;
-		mode.id = PROG_MODE_DAILY;
-		mode.var1 = mode.var2 = mode.var3 = mode.var4 = 0;
-		conf->mode[0] =
-			conf->mode[1] =
-			conf->mode[2] =
-			conf->mode[3] = mode;
+		conf->version = defConf.version;
+		conf->mode[0] = defConf.mode[0];
+		conf->mode[1] = defConf.mode[1];
+		conf->mode[2] = defConf.mode[2];
+		conf->mode[3] = defConf.mode[3];
 
 		changed = true;
 		bool ret = saveConfig();
 		if(!ret)
+		{
 			free((void *)conf);
+			conf = NULL;
+		}
 
 		return ret;
 	}
@@ -57,9 +86,9 @@ bool initConfig()
 
 	fread(buf, 1, sizeof(unsigned int), f);
 	unsigned int version = *(unsigned int *)buf;
-	if(version > confVer)
+	if(version > defConf.version)
 	{
-		fprintf(stderr, "[CONFIG MANAGER] Config version %d higher than maximum supported (%d)\n", version, confVer);
+		fprintf(stderr, "[CONFIG MANAGER] Config version %d higher than maximum supported (%d)\n", version, defConf.version);
 		fclose(f);
 		deinitConfig();
 		return false;
