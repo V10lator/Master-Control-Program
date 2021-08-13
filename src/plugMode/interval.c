@@ -7,7 +7,6 @@
 #include "plugMode/interval.h"
 
 static volatile unsigned long long lastInterval[4] = { 0ull, 0ull, 0ull, 0ull };
-static volatile bool lastOn[4] = { false, false, false, false };
 
 bool setPlugInterval(int plug, const unsigned long long intervalOn, const unsigned long long intervalOff)
 {
@@ -18,11 +17,9 @@ bool setPlugInterval(int plug, const unsigned long long intervalOn, const unsign
 		return false;
 	}
 
-	if(now.tv_sec - lastInterval[plug] >= (lastOn[plug] ? intervalOff : intervalOn) * 60ull)
+	if(now.tv_sec - lastInterval[plug] >= (getPlugState(plug) ? intervalOff : intervalOn) * 60ull)
 	{
-		lastOn[plug] = !lastOn[plug];
-
-		setPlugState(plug, lastOn[plug]);
+		togglePlug(plug);
 		printf("[PLUG MANAGER INTERVAL] Flipped plug #%d after %llu seconds!\n", plug + 1, now.tv_sec - lastInterval[plug]);
 		lastInterval[plug] = now.tv_sec;
 	}
