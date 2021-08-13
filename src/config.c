@@ -81,6 +81,7 @@ bool initConfig()
 	if(buf == NULL)
 	{
 		fprintf(stderr, "[CONFIG MANAGER] OUT OF MEMORY!\n");
+		fclose(f);
 		return false;
 	}
 
@@ -97,6 +98,7 @@ bool initConfig()
 	buf += sizeof(unsigned int);
 
 	fread(buf, 1, sizeof(CONFIG) - sizeof(unsigned int), f);
+	fclose(f);
 	conf = (CONFIG *)(buf - sizeof(unsigned int));
 	return true;
 }
@@ -127,10 +129,13 @@ bool saveConfig()
 	if(fwrite((void *)conf, 1, sizeof(CONFIG), f) != sizeof(CONFIG))
 	{
 		fprintf(stderr, "[CONFIG MANAGER] Error writing to file!\n");
+		fclose(f);
 		return false;
 	}
 
 	changed = false;
+	fflush(f);
+	fclose(f);
 	return true;
 }
 
