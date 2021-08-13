@@ -22,7 +22,7 @@ void updateDisplay()
 		struct tm timeStruct;
 		if(clock_gettime(CLOCK_REALTIME, &timestamp) == -1)
 		{
-			fprintf(stderr, "[DISPLAY_MANAGER] Error getting realtime!\n");
+			fprintf(stderr, "[DISPLAY MANAGER] Error getting realtime!\n");
 			//TODO: Show N/A or something like that
 		       }
 		else

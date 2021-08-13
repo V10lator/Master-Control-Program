@@ -14,7 +14,7 @@ bool setPlugInterval(int plug, const unsigned long long intervalOn, const unsign
 	struct timespec now;
 	if(clock_gettime(CLOCK_TAI, &now) == -1)
 	{
-		fprintf(stderr, "[PLUG_MANAGER] Error getting realtime!\n");
+		fprintf(stderr, "[PLUG MANAGER INTERVAL] Error getting realtime!\n");
 		return false;
 	}
 
@@ -23,7 +23,7 @@ bool setPlugInterval(int plug, const unsigned long long intervalOn, const unsign
 		lastOn[plug] = !lastOn[plug];
 
 		setPlugState(plug, lastOn[plug]);
-		printf("[PLUG_MANAGER] Flipped plug #%d after %llu seconds!\n", plug + 1, now.tv_sec - lastInterval[plug]);
+		printf("[PLUG MANAGER INTERVAL] Flipped plug #%d after %llu seconds!\n", plug + 1, now.tv_sec - lastInterval[plug]);
 		lastInterval[plug] = now.tv_sec;
 	}
 

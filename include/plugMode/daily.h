@@ -15,7 +15,7 @@ static inline bool setPlugDaily(const int plug, unsigned int startTimeH, const u
 
 	if(clock_gettime(CLOCK_REALTIME, &timestamp) == -1)
 	{
-		fprintf(stderr, "[PLUG_MANAGER_DAILY] Error getting realtime!\n");
+		fprintf(stderr, "[PLUG MANAGER DAILY] Error getting realtime!\n");
 		return false;
 	}
 
@@ -72,7 +72,7 @@ static inline bool setPlugDaily(const int plug, unsigned int startTimeH, const u
 		if(!getPlugState(plug))
 		{
 			setPlugState(plug, true);
-			printf("[PLUG MANAGER_DAILY] Turned on plug #%d at %02d.%02d.%d %02d:%02d:%02d:%09ld!\n", plug + 1, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, timestamp.tv_nsec);
+			printf("[PLUG MANAGER DAILY] Turned on plug #%d at %02d.%02d.%d %02d:%02d:%02d:%09ld!\n", plug + 1, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, timestamp.tv_nsec);
 		}
 	}
 	else
@@ -80,7 +80,7 @@ static inline bool setPlugDaily(const int plug, unsigned int startTimeH, const u
 		if(getPlugState(plug))
 		{
 			setPlugState(plug, false);
-			printf("[PLUG_MANAGER_DAILY] Turned off plug #%d at %02d.%02d.%d %02d:%02d:%02d:%09ld!\n", plug + 1, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, timestamp.tv_nsec);
+			printf("[PLUG_MANAGER DAILY] Turned off plug #%d at %02d.%02d.%d %02d:%02d:%02d:%09ld!\n", plug + 1, timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, timestamp.tv_nsec);
 		}
 	}
 
