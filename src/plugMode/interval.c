@@ -26,3 +26,8 @@ bool setPlugInterval(int plug, const unsigned long long intervalOn, const unsign
 
 	return true;
 }
+
+void resetPlugInterval(int plug)
+{
+	lastInterval[plug] = 0ull;
+}

@@ -7,6 +7,7 @@
 #include "display.h"
 #include "plugmanager.h"
 #include "progMode/manual.h"
+#include "plugMode/interval.h"
 
 static int manualChan = 0;
 
@@ -22,6 +23,7 @@ void modeSwitchToManual()
 
 void modeSwitchFromManual()
 {
+	resetPlugInterval(manualChan);
 	setPlugTimed(manualChan);
 	unlockPlug(manualChan);
 	displaySetChannel(DISPLAY_CHANNEL_INVALID);
