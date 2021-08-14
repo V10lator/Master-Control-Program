@@ -64,7 +64,7 @@ void handleButtons()
 	uint16_t oldProgMode = progMode;
 
 	// Program mode switch
-	if(buttons & BUTTON_PM_AUTO && buttons & BUTTON_PM_MANUAL)
+	if(buttons & BUTTON_PM_TIMESET && buttons & BUTTON_PM_WEEKLY2)
 	{
 		// MP23017 error, try to reset
 		fprintf(stderr, "[BUTTON HANDLER] MCP23017 error detected!\n");
