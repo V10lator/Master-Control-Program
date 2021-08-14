@@ -47,10 +47,11 @@ bool initialize_mcp23017()
 		0x00, 0x00,		// 0x08 - Compare against last value or def? (INTCON unused)
 		MCP_IOCON, MCP_IOCON,	// 0x0A - IOCON
 		0xFF, 0xFF,		// 0x0C - Enable pullups (GPPU)
-//		0x00, 0x00, 		// 0x0E - INTF - READ ONLY!
-//		0x00, 0x00,		// 0x10 - INTCAP -READ ONLY!
-//		0x00, 0x00,		// 0x12 - Clear GPIO values (GPIO)
-//		0x00, 0x00, 		// 0x14 - Clear latches (OLAT)
+		// Not really needed but just to be sure:
+		0x00, 0x00, 		// 0x0E - INTF - READ ONLY!
+		0x00, 0x00,		// 0x10 - INTCAP -READ ONLY!
+		0x00, 0x00,		// 0x12 - Clear GPIO values (GPIO)
+		0x00, 0x00, 		// 0x14 - Clear latches (OLAT)
 	};
 
 	// Set 16 bit mode from 8 bit
