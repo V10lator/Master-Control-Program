@@ -21,7 +21,7 @@
 #define MCP_IOCON_BLOCK (MCP_IOCON | 1 << 5)
 
 static int mcpFd = -1;
-static uint16_t mcp_old_state = 0x0000;
+static uint16_t mcp_old_state;
 
 bool initialize_mcp23017()
 {
@@ -98,6 +98,8 @@ bool initialize_mcp23017()
 		fprintf(stderr, "[MCP20317 DRIVER] Error setting default addy!\n");
 		return mcp_old_state;
 	}
+
+	mcp_old_state = 0x0000;
 
 	return true;
 }
