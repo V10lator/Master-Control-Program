@@ -10,6 +10,7 @@
 #include "plugMode/interval.h"
 
 static int manualChan = 0;
+static bool oldState;
 
 void modeSwitchToManual()
 {
@@ -18,12 +19,13 @@ void modeSwitchToManual()
 
 	displayEnableTime(true);
 	displaySetChannel(manualChan + 1);
-	displaySetOnOff(getPlugState(manualChan));
+	oldState = getPlugState(manualChan);
+	displaySetOnOff(oldState);
 }
 
 void modeSwitchFromManual()
 {
-	resetPlugInterval(manualChan);
+	setPlugState(manualChan, oldState);
 	setPlugTimed(manualChan);
 	unlockPlug(manualChan);
 	displaySetChannel(DISPLAY_CHANNEL_INVALID);
