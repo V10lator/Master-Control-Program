@@ -64,11 +64,18 @@ void handleButtons()
 	uint16_t oldProgMode = progMode;
 
 	// Program mode switch
-	if(buttons & BUTTON_PM_TIMESET && progMode != BUTTON_PM_TIMESET)
+	if(buttons & BUTTON_PM_AUTO && buttons & BUTTON_PM_MANUAL)
 	{
-		printf("[BUTTON HANDLER] Program mode switched to: Time set\n");
+		// MP23017 error, try to reset
+		fprintf(stderr, "[BUTTON HANDLER] MCP23017 error detected!\n");
+		close_mcp23017();
+		initialize_mcp23017(); //TODO: Error handling
+	}
+	else if(buttons & BUTTON_PM_AUTO && progMode != BUTTON_PM_AUTO)
+	{
+		printf("[BUTTON HANDLER] Program mode switched to: Auto\n");
 		tmp = progMode;
-		progMode = BUTTON_PM_TIMESET;
+		progMode = BUTTON_PM_AUTO;
 	}
 	else if(buttons & BUTTON_PM_MANUAL && progMode != BUTTON_PM_MANUAL)
 	{
@@ -76,11 +83,11 @@ void handleButtons()
 		tmp = progMode;
 		progMode = BUTTON_PM_MANUAL;
 	}
-	else if(buttons & BUTTON_PM_AUTO && progMode != BUTTON_PM_AUTO)
+	else if(buttons & BUTTON_PM_TIMESET && progMode != BUTTON_PM_TIMESET)
 	{
-		printf("[BUTTON HANDLER] Program mode switched to: Auto\n");
+		printf("[BUTTON HANDLER] Program mode switched to: Time set\n");
 		tmp = progMode;
-		progMode = BUTTON_PM_AUTO;
+		progMode = BUTTON_PM_TIMESET;
 	}
 	else if(buttons & BUTTON_PM_ONCE && progMode != BUTTON_PM_ONCE)
 	{
