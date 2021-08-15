@@ -10,12 +10,13 @@
 #include "threadutils.h"
 #include "timerthread.h"
 
-static void dummyHandler(int signal) {};
-
 void *timer_thread_main(void *data)
 {
 	int plug = (int)data;
 	setupPlug(plug);
+	signal(SIGINT, dummyHandler);
+	signal(SIGTERM, dummyHandler);
+	signal(SIGQUIT, dummyHandler);
 	signal(SIGUSR1, dummyHandler);
 
 	struct timespec timestamp;

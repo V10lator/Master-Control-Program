@@ -4,3 +4,4 @@
 
 bool appRunning();
 void stopThreads();
+void dummyHandler(int signal);

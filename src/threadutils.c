@@ -13,3 +13,5 @@ void stopThreads()
 {
 	__appRunning = false;
 }
+
+void dummyHandler(int signal) {};

@@ -17,9 +17,11 @@
 #include "display.h"
 #include "threadutils.h"
 #include "timerthread.h"
+#include "webui/server.h"
 
 #define SLICE_TIME 62500000 // 16 slices / sec
 
+static pthread_t webuiThread;
 static pthread_t timer_thread[4];
 static volatile atomic_bool exiting = false;
 
@@ -44,6 +46,9 @@ static void signalHandler(int signal)
 			pthread_kill(timer_thread[i], SIGUSR1);
 			pthread_join(timer_thread[i], NULL);
 		}
+
+		pthread_kill(webuiThread, SIGUSR1);
+		pthread_join(webuiThread, NULL);
 	}
 }
 
@@ -80,6 +85,13 @@ int main()
 		deinitConfig();
 		return 1;
 	}
+
+	if(pthread_create(&webuiThread, NULL, webui_thread_main, NULL) != 0)
+	{
+		cleanup();
+		return 3;
+	}
+
 
 	pthread_attr_t attr;
 	struct sched_param param;
