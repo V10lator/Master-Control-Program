@@ -1,15 +1,20 @@
 #include <pthread.h>
 #include <sched.h>
 #include <signal.h>
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <time.h>
+#include <unistd.h>
+
 #include "threadutils.h"
 
 #define MAX_THREADS 5
 
+volatile static atomic_bool lock = false;
 volatile static bool __appRunning = true;
-static pthread_t threads[MAX_THREADS];
-static int index = -1;
+volatile static pthread_t threads[MAX_THREADS];
+volatile static int index = -1;
 
 bool appRunning()
 {
@@ -18,10 +23,18 @@ bool appRunning()
 
 bool startThread(bool realtime, void *(*function)(void *), void *data)
 {
+	bool fa = false;
+	while(!atomic_compare_exchange_weak(&lock, &fa, true))
+	{
+		fa = false;
+		usleep(20);
+	}
+
 	if(++index == MAX_THREADS)
 	{
 		fprintf(stderr, "[THREAD MANAGER] Too many threads!\n");
 		index--;
+		lock = false;
 		return false;
 	}
 
@@ -51,18 +64,26 @@ bool startThread(bool realtime, void *(*function)(void *), void *data)
 		index--;
 	}
 
+	lock = false;
 	return ret;
 }
 
 void stopThreads()
 {
 	__appRunning = false;
+	bool fa = false;
+	while(!atomic_compare_exchange_weak(&lock, &fa, true))
+        {
+                fa = false;
+                usleep(20);
+        }
 
 	for(int i = 0; i <= index; i++)
 		pthread_kill(threads[i], SIGUSR1);
 	for(int i = 0; i <= index; i++)
 		pthread_join(threads[i], NULL);
 	index = -1;
+	lock = false;
 }
 
 void dummyHandler(int signal) {};
