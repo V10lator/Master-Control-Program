@@ -1,6 +1,4 @@
 #include <limits.h>
-#include <pthread.h>
-#include <sched.h>
 #include <signal.h>
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -21,8 +19,6 @@
 
 #define SLICE_TIME 62500000 // 16 slices / sec
 
-static pthread_t webuiThread;
-static pthread_t timer_thread[4];
 static volatile atomic_bool exiting = false;
 
 static inline void cleanup()
@@ -30,6 +26,7 @@ static inline void cleanup()
 	close_mcp23017();
 	shutdownGpio();
 	deinitConfig();
+	stopThreads();
 	disableDisplay();
 }
 
@@ -38,17 +35,8 @@ static void signalHandler(int signal)
 	bool fa = false;
         if(atomic_compare_exchange_strong(&exiting, &fa, true))
 	{
-		stopThreads();
 		printf("[MASTER CONTROL PROGRAM] Disabling!\n");
 		cleanup();
-		for(int i = 0; i < 4; i++)
-		{
-			pthread_kill(timer_thread[i], SIGUSR1);
-			pthread_join(timer_thread[i], NULL);
-		}
-
-		pthread_kill(webuiThread, SIGUSR1);
-		pthread_join(webuiThread, NULL);
 	}
 }
 
@@ -86,32 +74,17 @@ int main()
 		return 1;
 	}
 
-	if(pthread_create(&webuiThread, NULL, webui_thread_main, NULL) != 0)
+	if(!startThread(false, webui_thread_main, NULL))
 	{
 		cleanup();
-		return 3;
-	}
-
-
-	pthread_attr_t attr;
-	struct sched_param param;
-
-	param.sched_priority = 80;
-
-	if(pthread_attr_init(&attr) || pthread_attr_setschedpolicy(&attr, SCHED_FIFO) ||
-		pthread_attr_setschedparam(&attr, &param) || pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED))
-	{
-		fprintf(stderr, "[MAIN] Error initializing realtime scheduling!\n");
-		cleanup();
-		return 1;
+		return 2;
 	}
 
 	for(int i = 0; i < 4; i++)
-		if(pthread_create(&timer_thread[i], &attr, timer_thread_main, (void *)i) != 0)
+		if(!startThread(true, timer_thread_main, (void *)i))
 		{
-			stopThreads();
 			cleanup();
-			return 2;
+			return 3;
 		}
 
 	signal(SIGINT,signalHandler);
