@@ -50,9 +50,9 @@ static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *
 
 void *webui_thread_main(void *data)
 {
-	signal(SIGINT, dummyHandler);
-	signal(SIGTERM, dummyHandler);
-	signal(SIGQUIT, dummyHandler);
+//	signal(SIGINT, dummyHandler);
+//	signal(SIGTERM, dummyHandler);
+//	signal(SIGQUIT, dummyHandler);
 	signal(SIGUSR1, dummyHandler);
 
 	mg_mgr_init(&mgr);
