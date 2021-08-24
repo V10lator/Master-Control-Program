@@ -6,10 +6,10 @@
 
 #define DISPLAY_HEAT_PIN 0 //TODO
 
-bool displayInitialized = false;
-bool displayTimeEnabled = false;
-DISPLAY_CHANNEL displayChannel = DISPLAY_CHANNEL_INVALID;
-unsigned int displayOnOff = 0;
+static bool displayInitialized = false;
+static bool displayTimeEnabled = false;
+static DISPLAY_CHANNEL displayChannel = DISPLAY_CHANNEL_INVALID;
+static unsigned int displayOnOff = 0;
 
 void updateDisplay()
 {

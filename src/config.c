@@ -16,7 +16,7 @@ typedef struct
 
 static volatile CONFIG *conf = NULL;
 static volatile bool changed = false;
-const CONFIG defConf = {
+static const CONFIG defConf = {
 				.version = 0,	// Version
 				.mode[0] = {	// Config mode array
 					.id = PROG_MODE_INTERVAL,
