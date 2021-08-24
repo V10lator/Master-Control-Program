@@ -5,10 +5,8 @@
 #include "mongoose.h"
 #include "threadutils.h"
 
-static const char *webuiRoot = "/home/technics/MCP/www/";
-static const char *webuiAddy = "http://0.0.0.0:80";
-
-static struct mg_mgr mgr;
+#define WEBUI_ROOT "/home/technics/MCP/www/"
+#define WEBUI_ADDY "http://0.0.0.0:80"
 
 static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
 {
@@ -43,7 +41,7 @@ static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *
 		printf("[WEB UI] Requested path: %s\n", path);
 
 		//TODO: Just static file serving for now.
-		struct mg_http_serve_opts opts = { .root_dir = webuiRoot };
+		struct mg_http_serve_opts opts = { .root_dir = WEBUI_ROOT };
 		mg_http_serve_dir(c, ev_data, &opts);
 	}
 }
@@ -52,12 +50,14 @@ void *webui_thread_main(void *data)
 {
 	signal(SIGUSR1, dummyHandler);
 
-	mg_mgr_init(&mgr);
-	mg_http_listen(&mgr, webuiAddy, webuiCallback, NULL);
+	struct mg_mgr *mgr = (struct mg_mgr *)malloc(sizeof(struct mg_mgr));
+	mg_mgr_init(mgr);
+	mg_http_listen(mgr, WEBUI_ADDY, webuiCallback, NULL);
 
 	while(appRunning())
-		mg_mgr_poll(&mgr, 20);
+		mg_mgr_poll(mgr, 20);
 
-	mg_mgr_free(&mgr);
+	mg_mgr_free(mgr);
+	free((void *)mgr);
 	pthread_exit(NULL);
 }
