@@ -8,20 +8,23 @@
 
 #define WEBUI_ROOT	"/home/technics/MCP/www/"
 #define WEBUI_ADDY	"http://0.0.0.0:80"
-#define MCP_HEADERS	NULL
-#define EXTRA_MIME	NULL
-
-struct mg_http_serve_opts opts = {
-	.extra_headers = MCP_HEADERS,
-	.mime_types = EXTRA_MIME,
-	.fs = NULL,
-
-};
 
 static inline bool fileExists(const char *path)
 {
 	struct stat fs;
 	return stat(path, &fs) == 0 && S_ISREG(fs.st_mode);
+}
+
+static inline off_t getFilesize(FILE *fp)
+{
+	off_t i = ftello(fp);
+	if(fseek(fp, 0, SEEK_END) != 0)
+		return -1;
+
+	off_t fileSize = ftello(fp);
+
+	fseeko(fp, i, SEEK_SET);
+	return fileSize;
 }
 
 static inline void deliverContent(struct mg_connection *c, unsigned int argc, char **argv)
@@ -132,13 +135,41 @@ static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *
 		strcpy(realPath, WEBUI_ROOT);
 		strcat(realPath, path);
 
-		if(!fileExists(realPath))
+		FILE *f = fopen(realPath, "rb");
+		if(f == NULL)
 		{
 			httpFastReply(c, 403);
 			return;
 		}
 
-		mg_http_serve_file(c, ev_data, realPath, &opts);
+		off_t size = getFilesize(f);
+		if(size == -1)
+		{
+			httpFastReply(c, 403);
+			fclose(f);
+			return;
+		}
+
+		struct mg_fd *fd = malloc(sizeof(struct mg_fd));
+		if(fd == NULL)
+		{
+			httpFastReply(c, 500);
+			fclose(f);
+			return;
+		}
+
+		fd->fd = (void *)f;
+		fd->fs = &mg_fs_posix;
+
+		struct mg_str str = mg_guess_content_type(mg_str(realPath), NULL);
+		mg_printf(c, "HTTP/1.1 200 OK\r\n"
+			"Content-Type: %.*s\r\n"
+			"Content-Length: %l\r\n\r\n",
+			(int)str.len, str.ptr,
+			size);
+
+		c->pfn = mg_static_cb;
+		c->pfn_data = fd;
 	}
 }
 
