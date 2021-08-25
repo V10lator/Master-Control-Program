@@ -195,9 +195,9 @@ static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *
 		struct mg_str str = mg_guess_content_type(mg_str(realPath), NULL);
 		mg_printf(c, "HTTP/1.1 200 OK\r\n"
 			"Content-Type: %.*s\r\n"
-			"Content-Length: %l\r\n\r\n",
+			"Content-Length: %llu\r\n\r\n",
 			(int)str.len, str.ptr,
-			size);
+			(unsigned long long)size);
 
 		c->pfn = mg_static_cb;
 		c->pfn_data = fd;
