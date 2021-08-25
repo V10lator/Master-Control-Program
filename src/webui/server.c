@@ -9,6 +9,12 @@
 #define WEBUI_ROOT	"/home/technics/MCP/www/"
 #define WEBUI_ADDY	"http://0.0.0.0:80"
 
+typedef struct
+{
+	char *requestPath;
+	void *mgCallback;
+} API_DATA;
+
 static inline bool fileExists(const char *path)
 {
 	struct stat fs;
@@ -39,8 +45,14 @@ static inline void deliverContent(struct mg_connection *c, unsigned int argc, ch
 	httpReplyJson(c, NULL);
 }
 
-static inline void parseApiRequest(struct mg_connection *c, char *requestPath)
+static void parseApiRequest(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
 {
+	API_DATA *data = (API_DATA *)fn_data;
+	c->pfn_data = NULL;
+	c->pfn = data->mgCallback;
+	char *requestPath = data->requestPath;
+	free(fn_data);
+
 	unsigned int argc = 0;
 	char *argv[1024];
 	bool args = true;
@@ -70,10 +82,12 @@ static inline void parseApiRequest(struct mg_connection *c, char *requestPath)
 		if(strcmp(argv[0], "c") == 0)
 		{
 			deliverContent(c, argc, realArgv);
+			free(requestPath);
 			return;
 		}
 	}
 
+	free(requestPath);
 	httpFastReply(c, 400);
 }
 
@@ -121,7 +135,24 @@ static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *
 			path[4] == '/'
 		)
 		{
-			parseApiRequest(c, path + 5);
+			API_DATA *data = (API_DATA *)malloc(sizeof(API_DATA));
+			if(data == NULL)
+			{
+				httpFastReply(c, 500);
+				return;
+			}
+			data->requestPath = (char *)malloc(sizeof(path + 5) * sizeof(char));
+			if(data->requestPath == NULL)
+			{
+				free((void *)data);
+				httpFastReply(c, 500);
+				return;
+			}
+
+			strcpy(data->requestPath, path + 5);
+			data->mgCallback = c->pfn;
+			c->pfn = parseApiRequest;
+			c->pfn_data = (void *)data;
 			return;
 		}
 
