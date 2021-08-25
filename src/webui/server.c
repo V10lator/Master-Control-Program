@@ -193,9 +193,10 @@ static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *
 		fd->fs = &mg_fs_posix;
 
 		struct mg_str str = mg_guess_content_type(mg_str(realPath), NULL);
-		mg_printf(c, "HTTP/1.1 200 OK\r\n"
+		mg_printf(c, "HTTP/1.1 200 %s\r\n"
 			"Content-Type: %.*s\r\n"
 			"Content-Length: %llu\r\n\r\n",
+			mg_http_status_code_str(200),
 			(int)str.len, str.ptr,
 			(unsigned long long)size);
 
