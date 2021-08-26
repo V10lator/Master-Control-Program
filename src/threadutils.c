@@ -30,10 +30,10 @@ bool startThread(bool realtime, void *(*function)(void *), void *data)
 		usleep(20);
 	}
 
-	if(++index == MAX_THREADS)
+	int i = index + 1;
+	if(i == MAX_THREADS)
 	{
 		fprintf(stderr, "[THREAD MANAGER] Too many threads!\n");
-		index--;
 		lock = false;
 		return false;
 	}
@@ -57,11 +57,16 @@ bool startThread(bool realtime, void *(*function)(void *), void *data)
 	else
 		attrPtr = NULL;
 
-	bool ret = pthread_create(threads + index, attrPtr, function, data) == 0;
+	pthread_t thread;
+	bool ret = pthread_create(&thread, attrPtr, function, data) == 0;
 	if(!ret)
 	{
 		fprintf(stderr, "[THREAD MANAGER] Error starting thread!\n");
-		index--;
+	}
+	else
+	{
+		threads[i] = thread;
+		index = i;
 	}
 
 	lock = false;
