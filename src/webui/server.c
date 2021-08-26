@@ -166,39 +166,62 @@ static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *
 		strcpy(realPath, WEBUI_ROOT);
 		strcat(realPath, path);
 
-		FILE *f = fopen(realPath, "rb");
-		if(f == NULL)
+		int rf = open(realPath, O_RDONLY);
+		if(rf == -1)
 		{
 			httpFastReply(c, 403);
 			return;
 		}
 
-		off_t size = getFilesize(f);
-		if(size == -1)
+		struct stat fs;
+		if(fstat(rf, &fs) != 0 || !S_ISREG(fs.st_mode))
 		{
+			close(rf);
 			httpFastReply(c, 403);
-			fclose(f);
+			return;
+		}
+
+		char etag[64];
+		mg_http_etag(etag, sizeof(etag), (size_t)fs.st_size, fs.st_mtime);
+		struct mg_str *retag = mg_http_get_header(msg, "If-None-Match");
+		if(retag != NULL && mg_vcasecmp(retag, etag) == 0)
+		{
+			close(rf);
+			mg_printf(c, "HTTP/1.1 304 %s\r\nContent-Length: 0\r\n\r\n", mg_http_status_code_str(304));
+			return;
+		}
+
+		FILE *f = fdopen(rf, "rb");
+		if(f == NULL)
+		{
+			close(rf);
+			httpFastReply(c, 403);
 			return;
 		}
 
 		struct mg_fd *fd = malloc(sizeof(struct mg_fd));
 		if(fd == NULL)
 		{
-			httpFastReply(c, 500);
 			fclose(f);
+			httpFastReply(c, 500);
 			return;
 		}
 
 		fd->fd = (void *)f;
 		fd->fs = &mg_fs_posix;
 
-		struct mg_str str = mg_guess_content_type(mg_str(realPath), NULL);
+		struct mg_str str = mg_guess_content_type(mg_str(path), NULL);
 		mg_printf(c, "HTTP/1.1 200 %s\r\n"
 			"Content-Type: %.*s\r\n"
-			"Content-Length: %llu\r\n\r\n",
+			"Content-Length: %llu\r\n",
 			mg_http_status_code_str(200),
 			(int)str.len, str.ptr,
-			(unsigned long long)size);
+			(unsigned long long)fs.st_size);
+
+		if(etag != NULL)
+			mg_printf(c, "Etag: %s\r\n\r\n", etag);
+		else
+			mg_printf(c, "\r\n");
 
 		c->pfn = mg_static_cb;
 		c->pfn_data = fd;
