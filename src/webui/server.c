@@ -11,9 +11,44 @@
 
 typedef struct
 {
+	char *ext;
+	char *mime;
+
+} MIME_ENTRY;
+
+static const MIME_ENTRY mimes[] = {
+	{ .ext = "html", .mime = "text/html; charset=utf-8" },
+	{ .ext = "js", .mime = "text/javascript; charset=utf-8" },
+	{ .ext = "css", .mime = "text/css; charset=utf-8" },
+	{ .ext = "png", .mime = "image/png" },
+	{ .ext = "ico", .mime = "image/x-icon" },
+};
+
+typedef struct
+{
 	char *requestPath;
 	void *mgCallback;
 } API_DATA;
+
+static inline char *getMime(char *path)
+{
+	size_t len = strlen(path);
+	if(len < 2)
+		return "text/plain; charset=utf-8";
+
+	len;
+	path += len - 1;
+	for(int i = 0; i < len; i++, path--)
+		if(path[0] == '.')
+			break;
+
+	path++;
+	for(int i = 0; i < sizeof(mimes); i++)
+		if(strcmp(path, mimes[i].ext) == 0)
+			return mimes[i].mime;
+
+	return "text/plain; charset=utf-8";
+}
 
 static inline void deliverContent(struct mg_connection *c, unsigned int argc, char **argv)
 {
@@ -192,13 +227,12 @@ static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *
 		fd->fd = (void *)f;
 		fd->fs = &mg_fs_posix;
 
-		struct mg_str str = mg_guess_content_type(mg_str(path), NULL);
 		mg_printf(c, "HTTP/1.1 200 %s" HTTP_NEWLINE
-			"Content-Type: %.*s" HTTP_NEWLINE
+			"Content-Type: %s" HTTP_NEWLINE
 			"Content-Length: %llu" HTTP_NEWLINE
 			"Cache-Control: no-cache" HTTP_NEWLINE,
 			mg_http_status_code_str(200),
-			(int)str.len, str.ptr,
+			getMime(path),
 			(unsigned long long)fs.st_size);
 
 		if(etag != NULL)
