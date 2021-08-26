@@ -15,24 +15,6 @@ typedef struct
 	void *mgCallback;
 } API_DATA;
 
-static inline bool fileExists(const char *path)
-{
-	struct stat fs;
-	return stat(path, &fs) == 0 && S_ISREG(fs.st_mode);
-}
-
-static inline off_t getFilesize(FILE *fp)
-{
-	off_t i = ftello(fp);
-	if(fseek(fp, 0, SEEK_END) != 0)
-		return -1;
-
-	off_t fileSize = ftello(fp);
-
-	fseeko(fp, i, SEEK_SET);
-	return fileSize;
-}
-
 static inline void deliverContent(struct mg_connection *c, unsigned int argc, char **argv)
 {
 	if(argc != 1)
