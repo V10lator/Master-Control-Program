@@ -140,7 +140,7 @@ static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *
 
 		if(path[1] == '\0') // Moved permanently to /index.html
 		{
-			mg_http_reply(c, 301, "Location: /index.html\r\n", HTTP_STRING);
+			mg_http_reply(c, 301, "Location: /index.html" HTTP_NEWLINE, HTTP_STRING);
 			return;
 		}
 
@@ -169,7 +169,7 @@ static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *
 		if(retag != NULL && mg_vcasecmp(retag, etag) == 0)
 		{
 			close(rf);
-			mg_printf(c, "HTTP/1.1 304 %s\r\n\r\n", mg_http_status_code_str(304));
+			mg_printf(c, "HTTP/1.1 304 %s" HTTP_NEWLINE HTTP_NEWLINE, mg_http_status_code_str(304));
 			return;
 		}
 
@@ -193,18 +193,18 @@ static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *
 		fd->fs = &mg_fs_posix;
 
 		struct mg_str str = mg_guess_content_type(mg_str(path), NULL);
-		mg_printf(c, "HTTP/1.1 200 %s\r\n"
-			"Content-Type: %.*s\r\n"
-			"Content-Length: %llu\r\n"
-			"Cache-Control: no-cache\r\n",
+		mg_printf(c, "HTTP/1.1 200 %s" HTTP_NEWLINE
+			"Content-Type: %.*s" HTTP_NEWLINE
+			"Content-Length: %llu" HTTP_NEWLINE
+			"Cache-Control: no-cache" HTTP_NEWLINE,
 			mg_http_status_code_str(200),
 			(int)str.len, str.ptr,
 			(unsigned long long)fs.st_size);
 
 		if(etag != NULL)
-			mg_printf(c, "Etag: %s\r\n\r\n", etag);
+			mg_printf(c, "Etag: %s" HTTP_NEWLINE HTTP_NEWLINE, etag);
 		else
-			mg_printf(c, "\r\n");
+			mg_printf(c, HTTP_NEWLINE);
 
 		c->pfn = mg_static_cb;
 		c->pfn_data = fd;
