@@ -7,7 +7,7 @@
 #include "webui/utils.h"
 
 #define WEBUI_ROOT	"/home/technics/MCP/www/"
-#define WEBUI_ADDY	"http://0.0.0.0:80"
+#define WEBUI_ADDY	"http://[::]:80"
 
 typedef struct
 {
