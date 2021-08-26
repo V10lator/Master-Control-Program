@@ -2,7 +2,7 @@
 
 #include "mongoose.h"
 
-#define HTTP_STRING "Master Control Program"
+#define HTTP_STRING "Master Control Program " MCP_VERSION
 #define HTTP_NEWLINE "\r\n"
 #define CACHE_CONTROL_NOCACHE "Cache-Control: no-store, max-age=0" HTTP_NEWLINE
 

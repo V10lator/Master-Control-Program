@@ -42,7 +42,7 @@ static void signalHandler(int signal)
 
 int main()
 {
-	printf("[MASTER CONTROL PROGRAM]\n");
+	printf("[MASTER CONTROL PROGRAM] v" MCP_VERSION "\n");
 
 	if(mlockall(MCL_CURRENT|MCL_FUTURE))
 	{
