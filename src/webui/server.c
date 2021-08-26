@@ -198,7 +198,7 @@ static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *
 		}
 
 		char etag[64];
-		mg_http_etag(etag, sizeof(etag), (size_t)fs.st_size, fs.st_mtime);
+		snprintf(etag, sizeof(etag), "\"%lxx%lx\"", fs.st_mtime, fs.st_size);
 		struct mg_str *retag = mg_http_get_header(msg, "If-None-Match");
 		if(retag != NULL && mg_vcasecmp(retag, etag) == 0)
 		{
@@ -228,16 +228,15 @@ static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *
 
 		mg_printf(c, "HTTP/1.1 200 %s" HTTP_NEWLINE
 			"Content-Type: %s" HTTP_NEWLINE
-			"Content-Length: %llu" HTTP_NEWLINE
-			"Cache-Control: no-cache" HTTP_NEWLINE,
+			"Content-Length: %lu" HTTP_NEWLINE
+			"Cache-Control: no-cache" HTTP_NEWLINE
+			"Etag: %s" HTTP_NEWLINE
+			HTTP_NEWLINE,
 			mg_http_status_code_str(200),
 			getMime(path),
-			(unsigned long long)fs.st_size);
-
-		if(etag != NULL)
-			mg_printf(c, "Etag: %s" HTTP_NEWLINE HTTP_NEWLINE, etag);
-		else
-			mg_printf(c, HTTP_NEWLINE);
+			fs.st_size,
+			etag
+		);
 
 		c->pfn = mg_static_cb;
 		c->pfn_data = fd;
