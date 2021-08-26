@@ -36,7 +36,6 @@ static inline char *getMime(char *path)
 	if(len < 2)
 		return "text/plain; charset=utf-8";
 
-	len;
 	path += len - 1;
 	for(int i = 0; i < len; i++, path--)
 		if(path[0] == '.')
