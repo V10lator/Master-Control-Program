@@ -169,7 +169,7 @@ static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *
 		if(retag != NULL && mg_vcasecmp(retag, etag) == 0)
 		{
 			close(rf);
-			mg_printf(c, "HTTP/1.1 304 %s\r\nContent-Length: 0\r\n\r\n", mg_http_status_code_str(304));
+			mg_printf(c, "HTTP/1.1 304 %s\r\n\r\n", mg_http_status_code_str(304));
 			return;
 		}
 
