@@ -1,0 +1,20 @@
+:root {
+	--bs-body-color: var(--bs-cyan);
+	--bs-body-bg: var(--bs-dark);
+	--bs-primary: var(--bs-gray-800);
+	--bs-secondary: black;
+	--bs-primary-rgb: 52,58,64;
+	--bs-secondary-rgb: 0,0,0;
+}
+
+#container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	height: 100%;
+}
+
+#uc {
+	width: 50%;
+}
