@@ -7,18 +7,34 @@
 	<link href="/css/bootstrap.min.css" rel="stylesheet" />
 	<link href="/css/technics.css" rel="stylesheet" />
 	<script src="/js/jquery-3.6.0.min.js"></script>
+	<script src="/js/popper.min.js"></script>
 	<script src="/js/bootstrap.min.js"></script>
+	<script src="/js/main.js"></script>
 </head>
 <body>
 	<div class="container bg-primary">
 		<div class="row">
-			<div class="col-sm-100 p-5 bg-secondary text-center">
+			<div class="col p-5 bg-secondary text-center">
 				<h1>Technics SH-4060</h1>
+				<div id="clock">&nbsp;</div>
 			</div>
+			<div class="col p-5 bg-secondary d-block d-sm-none">
+				<div class="dropdown">
+					<button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+					<ul class="dropdown-menu dropdown-menu-dark" id="mobile_menu" >
+					</ul>
+				</div>
+			</div>
+			
 		</div>
 		<div class="row">
-			<div class="col-sm-100 center-block text-center">
-				<img src="/img/uc.png" alt="Unter construction!" id="uc" class="center-block" />
+			<div class="col-2 p-1 d-none d-sm-block">
+				<div class="btn-group-vertical btn-group-lg" id="menu">
+					<button type="button" class="btn btn-primary btn-block" disabled>Menü</button>
+				</div>
+			</div>
+			<div class="col-10" id="main">
+				<div class="d-flex justify-content-center m-5"><div class="spinner-border"></div></div>
 			</div>
 		</div>
 	</div>

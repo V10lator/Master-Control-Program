@@ -4,6 +4,7 @@
 
 #include "mongoose.h"
 #include "threadutils.h"
+#include "webui/ti.h"
 #include "webui/utils.h"
 
 #define WEBUI_ROOT	"/home/technics/MCP/www/"
@@ -101,6 +102,12 @@ static void parseApiRequest(struct mg_connection *c, int ev, void *ev_data, void
 			free(requestPath);
 			return;
 		}
+		if(strcmp(argv[0], "t") == 0)
+		{
+			sendTime(c);
+			free(requestPath);
+			return;
+		}
 	}
 
 	free(requestPath);
@@ -143,6 +150,13 @@ static void webuiCallback(struct mg_connection *c, int ev, void *ev_data, void *
 			httpFastReply(c, 403);
 			return;
 		}
+
+		for(int i = 0; i < strlen(path); i++)
+			if(path[i] == '?')
+			{
+				path[i] = '\0';
+				break;
+			}
 
 		if(strlen(path) > 4 &&
 			path[1] == 'a' &&

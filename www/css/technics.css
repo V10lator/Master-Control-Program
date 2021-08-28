@@ -15,6 +15,7 @@
 	height: 100%;
 }
 
-#uc {
-	width: 50%;
+.spinner-border	{
+	width: 5rem;
+	height: 5rem;
 }
