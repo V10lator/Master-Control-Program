@@ -18,7 +18,6 @@
 #define GPIO_PLUG4	23
 
 volatile static atomic_bool plugLocked[4] = { false, false, false, false };
-volatile static bool plugState [4];
 
 static const unsigned int gpios[4] = { GPIO_PLUG1, GPIO_PLUG2, GPIO_PLUG3, GPIO_PLUG4 };
 
@@ -57,13 +56,12 @@ void togglePlug(int plug)
 
 bool getPlugState(int plug)
 {
-	return plugState[plug];
+	return !gpioRead(gpios[plug]);
 }
 
 void setPlugState(int plug, bool state)
 {
 	gpioWrite(gpios[plug], !state);
-	plugState[plug] = state;
 }
 
 bool setPlugTimed(int plug)
