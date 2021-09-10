@@ -4,17 +4,22 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
 
 #include "threadutils.h"
 
-#define MAX_THREADS 5
+typedef struct MCP_THREAD MCP_THREAD;
+struct MCP_THREAD
+{
+	pthread_t pthread;
+	MCP_THREAD *next;
+};
 
 volatile static atomic_bool lock = false;
 volatile static bool __appRunning = true;
-volatile static pthread_t threads[MAX_THREADS];
-volatile static int index = -1;
+volatile static MCP_THREAD *threads = NULL;
 
 bool appRunning()
 {
@@ -23,19 +28,19 @@ bool appRunning()
 
 bool startThread(const char *name, bool realtime, void *(*function)(void *), void *data)
 {
+	MCP_THREAD *thread = (MCP_THREAD *)malloc(sizeof(MCP_THREAD));
+	if(thread == NULL)
+	{
+		fprintf(stderr, "[THREAD MANAGER] OUT OF MEMORY!\n");
+		return false;
+	}
+	thread->next = NULL;
+
 	bool fa = false;
 	while(!atomic_compare_exchange_weak(&lock, &fa, true))
 	{
 		fa = false;
 		usleep(20);
-	}
-
-	int i = index + 1;
-	if(i == MAX_THREADS)
-	{
-		fprintf(stderr, "[THREAD MANAGER] Can't start %s: Too many threads!\n", name);
-		lock = false;
-		return false;
 	}
 
 	pthread_attr_t attr;
@@ -57,17 +62,27 @@ bool startThread(const char *name, bool realtime, void *(*function)(void *), voi
 	else
 		attrPtr = NULL;
 
-	pthread_t thread;
-	bool ret = pthread_create(&thread, attrPtr, function, data) == 0;
+	bool ret = pthread_create(&(thread->pthread), attrPtr, function, data) == 0;
 	if(!ret)
+	{
 		fprintf(stderr, "[THREAD MANAGER] Error starting %s!\n", name);
+		free((void *)thread);
+	}
 	else
 	{
-		if(pthread_setname_np(thread, name) != 0)
+		if(pthread_setname_np(thread->pthread, name) != 0)
 			fprintf(stderr, "[THREAD MANAGER] Error setting name \"%s\"!\n", name);
 
-		threads[i] = thread;
-		index = i;
+		if(threads == NULL)
+			threads = thread;
+		else
+		{
+			volatile MCP_THREAD *cur = threads;
+			while(cur->next != NULL)
+				cur = cur->next;
+
+			cur->next = thread;
+		}
 	}
 
 	lock = false;
@@ -84,11 +99,24 @@ void stopThreads()
                 usleep(20);
         }
 
-	for(int i = 0; i <= index; i++)
-		pthread_kill(threads[i], SIGUSR1);
-	for(int i = 0; i <= index; i++)
-		pthread_join(threads[i], NULL);
-	index = -1;
+	volatile MCP_THREAD *cur = threads;
+	while(cur != NULL)
+	{
+		pthread_kill(cur->pthread, SIGUSR1);
+		cur = cur->next;
+	}
+
+	cur = threads;
+	void *tmp;
+	while(cur != NULL)
+	{
+		pthread_join(cur->pthread, NULL);
+		tmp = (void *)cur;
+		cur = cur->next;
+		free(tmp);
+	}
+
+	threads = NULL;
 	lock = false;
 }
 
