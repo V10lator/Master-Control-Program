@@ -20,7 +20,7 @@ bool setPlugInterval(int plug, const unsigned long long intervalOn, const unsign
 	if(now.tv_sec - lastInterval[plug] >= (getPlugState(plug) ? intervalOff : intervalOn) * 60ull)
 	{
 		togglePlug(plug);
-		printf("[PLUG MANAGER INTERVAL] Flipped plug #%d after %llu seconds (now %s)!\n", plug + 1, now.tv_sec - lastInterval[plug], getPlugState(plug) ? "on" : "off");
+//		printf("[PLUG MANAGER INTERVAL] Flipped plug #%d after %llu seconds (now %s)!\n", plug + 1, now.tv_sec - lastInterval[plug], getPlugState(plug) ? "on" : "off");
 		lastInterval[plug] = now.tv_sec;
 	}
 

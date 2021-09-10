@@ -21,7 +21,7 @@ bool appRunning()
 	return __appRunning;
 }
 
-bool startThread(bool realtime, void *(*function)(void *), void *data)
+bool startThread(const char *name, bool realtime, void *(*function)(void *), void *data)
 {
 	bool fa = false;
 	while(!atomic_compare_exchange_weak(&lock, &fa, true))
@@ -33,7 +33,7 @@ bool startThread(bool realtime, void *(*function)(void *), void *data)
 	int i = index + 1;
 	if(i == MAX_THREADS)
 	{
-		fprintf(stderr, "[THREAD MANAGER] Too many threads!\n");
+		fprintf(stderr, "[THREAD MANAGER] Can't start %s: Too many threads!\n", name);
 		lock = false;
 		return false;
 	}
@@ -48,7 +48,7 @@ bool startThread(bool realtime, void *(*function)(void *), void *data)
 			pthread_attr_setschedparam(&attr, &param) || pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED)
 		)
 		{
-			fprintf(stderr, "[THREAD MANAGER] Error initializing realtime scheduling!\n");
+			fprintf(stderr, "[THREAD MANAGER] Error initializing realtime scheduling for %s!\n", name);
 			attrPtr = NULL;
 		}
 		else
@@ -60,11 +60,12 @@ bool startThread(bool realtime, void *(*function)(void *), void *data)
 	pthread_t thread;
 	bool ret = pthread_create(&thread, attrPtr, function, data) == 0;
 	if(!ret)
-	{
-		fprintf(stderr, "[THREAD MANAGER] Error starting thread!\n");
-	}
+		fprintf(stderr, "[THREAD MANAGER] Error starting %s!\n", name);
 	else
 	{
+		if(pthread_setname_np(thread, name) != 0)
+			fprintf(stderr, "[THREAD MANAGER] Error setting name \"%s\"!\n", name);
+
 		threads[i] = thread;
 		index = i;
 	}

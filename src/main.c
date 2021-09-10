@@ -1,4 +1,5 @@
 #include <limits.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -43,6 +44,8 @@ static void signalHandler(int signal)
 int main()
 {
 	printf("[MASTER CONTROL PROGRAM] v" MCP_VERSION "\n");
+	if(pthread_setname_np(pthread_self(), "MCP") != 0)
+		fprintf(stderr, "[MAIN] Error setting thread name!\n");
 
 	if(mlockall(MCL_CURRENT|MCL_FUTURE))
 	{
@@ -74,14 +77,15 @@ int main()
 		return 1;
 	}
 
-	if(!startThread(false, webui_thread_main, NULL))
+	if(!startThread("[MCP] Web UI", false, webui_thread_main, NULL))
 	{
 		cleanup();
 		return 2;
 	}
 
+	const char *plugThreadName[4] = { "[MCP] Plug #1", "[MCP] Plug #2", "[MCP] Plug #3", "[MCP] Plug #4" };
 	for(int i = 0; i < 4; i++)
-		if(!startThread(true, timer_thread_main, (void *)i))
+		if(!startThread(plugThreadName[i], true, timer_thread_main, (void *)i))
 		{
 			cleanup();
 			return 3;
