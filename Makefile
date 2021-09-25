@@ -1,13 +1,15 @@
 TARGET_EXEC := MCP
 VERSION := 0.0.1
 
-CFLAGS := 	-march=native -mcpu=native -Ofast -mtls-dialect=gnu2 \
+CFLAGS := 	-march=native -mcpu=native -Ofast \
 		-flto=4 -fno-fat-lto-objects -fuse-linker-plugin \
 		-floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block \
 		-fgraphite-identity -floop-nest-optimize -floop-parallelize-all -ftree-parallelize-loops=4 -ftree-vectorize \
 		-fipa-pta -fno-semantic-interposition -fno-common -Wall -pipe \
 		-DMG_ENABLE_IPV6=1 -DMG_ENABLE_LOG=0 -DMG_ENABLE_SSI=0 -DMCP_VERSION=\"$(VERSION)\" \
 		-std=gnu99
+# Not working with 64 bit:
+#		-mtls-dialect=gnu2
 LDFLAGS := -lpthread -Wl,-O1 -Wl,--as-needed -Wl,--hash-style=gnu
 
 #CFLAGS := -march=native -O0 -pipe
