@@ -1,45 +1,42 @@
+#include <fcntl.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <sys/mman.h>
 
 #include "config.h"
 
-typedef struct
+#define AT24_LENGTH 4096
+#define AT24_MAGIC 0x1337BABE // TODO
+#define AT24_CUR_VER 0
+
+typedef struct // TODO: Make this __attribute__((__packed__) ?
 {
-	unsigned int version;
+	uint64_t magic;
+	uint8_t version;
 	CONFIG_MODE mode[4];
-} CONFIG;
+} AT24_CONFIG;
 
-#define MAX_CONFIG_SIZE sizeof(CONFIG)
+static volatile AT24_CONFIG *at24_config = MAP_FAILED;
 
-static volatile CONFIG *conf = NULL;
-static volatile bool changed = false;
-static const CONFIG defConf = {
-				.version = 0,	// Version
-				.mode[0] = {	// Config mode array
+static const CONFIG_MODE defConf[4] = {
+				{
+					.id = PROG_MODE_ALWAYS_OFF,
+				},
+				{
 					.id = PROG_MODE_INTERVAL,
 					.var1 = 15,	// Minutes till on
 					.var2 = 15,	// Minutes till off
-					.var3 = 0,
-					.var4 = 0,
 				},
-				.mode[1] = {
-					.id = PROG_MODE_INTERVAL,
-					.var1 = 15,
-					.var2 = 15,
-					.var3 = 0,
-					.var4 = 0,
-				},
-				.mode[2] = {
+				{
 					.id = PROG_MODE_DAILY,
 					.var1 = 18,	// Start time hour
-					.var2 = 30,	// Start time minute
+					.var2 = 00,	// Start time minute
 					.var3 = 23,	// End time hour
 					.var4 = 0,	// End time minute
 				},
-				.mode[3] = {
+				{
 					.id = PROG_MODE_DAILY,
 					.var1 = 5,
 					.var2 = 0,
@@ -48,98 +45,57 @@ static const CONFIG defConf = {
 				},
 			};
 
+
 bool initConfig()
 {
-	FILE *f = fopen("/etc/master_control_program.conf", "rb");
-	if(f == NULL)
+	if(sizeof(AT24_CONFIG) > AT24_LENGTH)
 	{
-		conf = (CONFIG *)malloc(sizeof(CONFIG));
-		if(conf == NULL)
-		{
-			fprintf(stderr, "[CONFIG MANAGER] OUT OF MEMORY!\n");
-			return false;
-		}
-
-		conf->version = defConf.version;
-		conf->mode[0] = defConf.mode[0];
-		conf->mode[1] = defConf.mode[1];
-		conf->mode[2] = defConf.mode[2];
-		conf->mode[3] = defConf.mode[3];
-
-		changed = true;
-		bool ret = saveConfig();
-		if(!ret)
-		{
-			free((void *)conf);
-			conf = NULL;
-		}
-
-		return ret;
-	}
-
-	uint8_t *buf = (uint8_t *)malloc(sizeof(CONFIG));
-	if(buf == NULL)
-	{
-		fprintf(stderr, "[CONFIG MANAGER] OUT OF MEMORY!\n");
-		fclose(f);
+		fprintf(stderr, "[AT24 DRIVER] Sanity check: %lu > %i\n", sizeof(AT24_CONFIG), AT24_LENGTH);
 		return false;
 	}
 
-	fread(buf, 1, sizeof(unsigned int), f);
-	unsigned int version = *(unsigned int *)buf;
-	if(version > defConf.version)
+	int fd = open("/sys/class/i2c-dev/i2c-1/device/1-0057/eeprom", O_RDWR | O_SYNC) ;
+	if(fd < 0)
 	{
-		fprintf(stderr, "[CONFIG MANAGER] Config version %d higher than maximum supported (%d)\n", version, defConf.version);
-		fclose(f);
-		deinitConfig();
+		fprintf(stderr, "[AT24 DRIVER] Error opening sys file!\n");
 		return false;
 	}
 
-	buf += sizeof(unsigned int);
+	at24_config = (AT24_CONFIG *) mmap(0, AT24_LENGTH,
+		PROT_READ | PROT_WRITE,
+		MAP_SHARED | MAP_LOCKED,
+		fd, 0
+	);
 
-	fread(buf, 1, sizeof(CONFIG) - sizeof(unsigned int), f);
-	fclose(f);
-	conf = (CONFIG *)(buf - sizeof(unsigned int));
+	close(fd);
+
+ 	if(at24_config == MAP_FAILED)
+	{
+		fprintf(stderr,	"[AT24 DRIVER] Bad, mmap failed\n");
+		return false;
+	}
+
+	if(at24_config->magic != AT24_MAGIC)
+	{
+		at24_config->magic = AT24_MAGIC;
+		at24_config->version = AT24_CUR_VER;
+		for(int i = 0; i < 4; i++)
+			at24_config->mode[i] = defConf[i];
+	}
+
 	return true;
 }
 
 void deinitConfig()
 {
-	if(conf == NULL)
-		return;
-
-	saveConfig();
-	CONFIG *c = (CONFIG *)conf;
-	conf = NULL;
-	free((void *)c);
-}
-
-bool saveConfig()
-{
-	if(conf == NULL || !changed)
-		return true;
-
-	FILE *f = fopen("/etc/master_control_program.conf", "wb");
-	if(f == NULL)
+	if(at24_config != MAP_FAILED)
 	{
-		fprintf(stderr, "[CONFIG MANAGER] Error saving file!");
-		return false;
+		munmap((void *)at24_config, AT24_LENGTH);
+		at24_config = MAP_FAILED;
 	}
-
-	if(fwrite((void *)conf, 1, sizeof(CONFIG), f) != sizeof(CONFIG))
-	{
-		fprintf(stderr, "[CONFIG MANAGER] Error writing to file!\n");
-		fclose(f);
-		return false;
-	}
-
-	changed = false;
-	fflush(f);
-	fclose(f);
-	return true;
 }
 
 CONFIG_MODE configGetMode(unsigned int index)
 {
-	return conf->mode[index];
+	return at24_config->mode[index];
 }

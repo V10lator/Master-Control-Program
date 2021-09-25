@@ -75,6 +75,10 @@ bool setPlugTimed(int plug)
 			return setPlugOnce(plug);
 		case PROG_MODE_INTERVAL:
 			return setPlugInterval(plug, mode.var1, mode.var2);
+		case PROG_MODE_ALWAYS_ON:
+			return setPlugAlways(plug, true);
+		case PROG_MODE_ALWAYS_OFF:
+			return setPlugAlways(plug, false);
 		default:
 			return false;
 	}
