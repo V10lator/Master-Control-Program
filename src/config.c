@@ -23,7 +23,7 @@ static volatile bool at24_changed[4] = { false, false, false, false };
 
 static const CONFIG_MODE defConf[4] = {
 				{
-					.id = PROG_MODE_ALWAYS_OFF,
+					.id = PROG_MODE_ALWAYS_ON,
 				},
 				{
 					.id = PROG_MODE_INTERVAL,
