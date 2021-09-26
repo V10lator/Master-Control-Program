@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include "plugmanager.h"
+#include "plugMode/always.h"
 #include "plugMode/daily.h"
 #include "plugMode/interval.h"
 #include "plugMode/once.h"
