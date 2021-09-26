@@ -13,18 +13,19 @@
 #include "config.h"
 
 #define AT24_PATH "/sys/class/i2c-dev/i2c-1/device/1-0057/eeprom"
-#define AT24_MAGIC 0x1337BABE // TODO
-#define AT24_CUR_VER 0
+#define AT24_MAGIC 0x1337BABE
+#define AT24_CUR_VER 1
 
-typedef struct // TODO: Make this __attribute__((__packed__) ?
+typedef struct __attribute__((__packed__))
 {
-	uint64_t magic;
-	uint8_t version;
+	uint32_t magicA;
+	uint32_t version;
 	CONFIG_MODE mode[4];
+	uint32_t magicB;
 } AT24_CONFIG;
 
 static volatile AT24_CONFIG *at24_config = NULL;
-static volatile bool at24_changed = false;
+static volatile AT24_CONFIG *at24_orig = NULL;
 
 static const CONFIG_MODE defConf[4] = {
 				{
@@ -74,32 +75,55 @@ bool initConfig()
 		goto cleanup_fd;
 	}
 
-	AT24_CONFIG *tc = (AT24_CONFIG *)malloc(fs.st_size);
+	uint8_t *tc = (uint8_t *)malloc(fs.st_size);
 	if(tc == NULL)
 	{
 		fprintf(stderr, "[AT24 DRIVER] OUT OF MEMORY!\n");
 		goto cleanup_fd;
 	}
-	size_t got = read(fd, (void *) tc, fs.st_size);
-	if(got != fs.st_size)
+
+	size_t got = 0;
+	size_t got_now;
+	do
 	{
-		fprintf(stderr, "[AT24 DRIVER] Error reading EEPROM!\n");
+		got_now = read(fd, (void *)(tc + got), fs.st_size - got);
+		if(got_now == -1)
+		{
+			fprintf(stderr, "[AT24 DRIVER] Error reading EEPROM!\n");
+			goto cleanup_mem;
+		}
+		got += got_now;
+	} while(got != fs.st_size);
+
+	close(fd);
+
+	AT24_CONFIG *nc = malloc(sizeof(AT24_CONFIG));
+	if(nc == NULL)
+	{
+		fprintf(stderr, "[AT24 DRIVER] OUT OF MEMORY!\n");
 		goto cleanup_mem;
 	}
 
-	close(fd);
-	at24_config = tc;
+	memcpy((void *)nc, (void *)tc, sizeof(AT24_CONFIG));
+	at24_config = nc;
+	at24_orig = (AT24_CONFIG *)tc;
 
-	if(at24_config->magic != AT24_MAGIC)
+	if(at24_config->magicA != AT24_MAGIC)
 	{
 		fprintf(stderr, "[AT24 DRIVER] Magic not found, setting defaults.\n");
-		at24_config->magic = AT24_MAGIC;
+		at24_config->magicA = at24_config->magicB = AT24_MAGIC;
 		at24_config->version = AT24_CUR_VER;
 		for(int i = 0; i < 4; i++)
 			at24_config->mode[i] = defConf[i];
 
-		at24_changed = true;
-		saveConfig();
+		return saveConfig();
+	}
+
+	if(at24_config->magicB != AT24_MAGIC)
+	{
+		fprintf(stderr, "[AT24 DRIVER] Possibly corrupted EEPROM! Forcing save!.\n");
+		at24_config->magicB = AT24_MAGIC;
+		return saveConfig();
 	}
 
 	return true;
@@ -113,11 +137,8 @@ cleanup_fd:
 
 bool saveConfig()
 {
-	if(at24_config == NULL)
+	if(at24_config == NULL || at24_orig == NULL)
 		return false;
-
-	if(!at24_changed)
-		return true;
 
 	int fd = open(AT24_PATH, O_WRONLY | O_SYNC);
 	if(fd < 0)
@@ -126,26 +147,63 @@ bool saveConfig()
 		return false;
 	}
 
-	size_t written = 0;
-	size_t written_now = 0;
-	size_t toWrite = sizeof(AT24_CONFIG);
+	size_t written_now;
+	size_t toWrite;
+	size_t dirtStart = -1;
+	uint8_t *obuf = (uint8_t *)at24_orig;
 	uint8_t *buf = (uint8_t *)at24_config;
-	while(toWrite)
+	uint8_t *ptr;
+	bool ret = true;
+	for(size_t i = 0; i < sizeof(AT24_CONFIG); i++)
 	{
-		written_now = write(fd, buf + written, toWrite);
-		if(written_now == -1)
+		if(obuf + i == buf + i)
 		{
-			fprintf(stderr, "[AT24 DRIVER] Error writing config: %s\n", strerror(errno));
-			close(fd);
-			return false;
+			if(dirtStart == -1)
+				continue;
+
+			lseek(fd, dirtStart, SEEK_SET);
+			toWrite = i - dirtStart;
+			ptr = buf + dirtStart;
+			while(toWrite)
+			{
+				written_now = write(fd, ptr, toWrite);
+				if(written_now == -1)
+				{
+					fprintf(stderr, "[AT24 DRIVER] Error writing config: %s\n", strerror(errno));
+					ret = false;
+					goto exit_saving;
+				}
+				ptr += written_now;
+				toWrite -= written_now;
+			}
+			dirtStart = -1;
 		}
-		written += written_now;
-		toWrite -= written_now;
+
+		if(dirtStart == -1)
+			dirtStart = i;
+	}
+	if(dirtStart != -1)
+	{
+		lseek(fd, dirtStart, SEEK_SET);
+		toWrite = sizeof(AT24_CONFIG);
+		ptr = buf + dirtStart;
+		while(toWrite)
+		{
+			written_now = write(fd, ptr, toWrite);
+			if(written_now == -1)
+			{
+				fprintf(stderr, "[AT24 DRIVER] Error writing config: %s\n", strerror(errno));
+				ret = false;
+				goto exit_saving;
+			}
+			ptr += written_now;
+			toWrite -= written_now;
+		}
 	}
 
-	at24_changed = false;
+exit_saving:
 	close(fd);
-	return true;
+	return ret;
 }
 
 void deinitConfig()
@@ -155,6 +213,12 @@ void deinitConfig()
 		saveConfig();
 		void *c = (void *)at24_config;
 		at24_config = NULL;
+		free(c);
+	}
+	if(at24_orig != NULL)
+	{
+		void *c = (void *)at24_orig;
+		at24_orig = NULL;
 		free(c);
 	}
 }
