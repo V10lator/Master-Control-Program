@@ -61,7 +61,7 @@ bool startThread(const char *name, bool realtime, void *(*function)(void *), voi
 		if(pthread_attr_setschedpolicy(attrPtr, SCHED_FIFO) ||
 			pthread_attr_setschedparam(attrPtr, &param) ||
 			pthread_attr_setinheritsched(attrPtr, PTHREAD_EXPLICIT_SCHED) ||
-			pthread_attr_setstacksize(attrPtr, PTHREAD_STACK_MIN + RT_STACK_SIZE)
+			pthread_attr_setstacksize(attrPtr, RT_STACK_SIZE)
 		)
 		{
 			fprintf(stderr, "[THREAD MANAGER] Error initializing realtime scheduling for %s!\n", name);
