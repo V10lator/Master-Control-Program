@@ -39,58 +39,63 @@ bool startThread(const char *name, bool realtime, void *(*function)(void *), voi
 	}
 	thread->next = NULL;
 
-	bool fa = false;
-	while(!atomic_compare_exchange_weak(&lock, &fa, true))
+	bool ret = false;
+	while(!atomic_compare_exchange_weak(&lock, &ret, true))
 	{
-		fa = false;
+		ret = false;
 		usleep(20);
 	}
 
 	pthread_attr_t attr;
-	pthread_attr_t *attrPtr;
+	pthread_attr_t *attrPtr = &attr;
+	if(pthread_attr_init(attrPtr))
+	{
+		fprintf(stderr, "[THREAD MANAGER] Error initializing thread!");
+		goto threadError;
+	}
 	if(realtime)
 	{
 		struct sched_param param = {
 			.sched_priority = 95,
 		};
-		if(pthread_attr_init(&attr) || pthread_attr_setschedpolicy(&attr, SCHED_FIFO) ||
-			pthread_attr_setschedparam(&attr, &param) ||
-			pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED) ||
-			pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN + RT_STACK_SIZE)
+		if(pthread_attr_setschedpolicy(attrPtr, SCHED_FIFO) ||
+			pthread_attr_setschedparam(attrPtr, &param) ||
+			pthread_attr_setinheritsched(attrPtr, PTHREAD_EXPLICIT_SCHED) ||
+			pthread_attr_setstacksize(attrPtr, PTHREAD_STACK_MIN + RT_STACK_SIZE)
 		)
 		{
 			fprintf(stderr, "[THREAD MANAGER] Error initializing realtime scheduling for %s!\n", name);
-			attrPtr = NULL;
+			goto threadError;
 		}
-		else
-			attrPtr = &attr;
 	}
-	else
-		attrPtr = NULL;
 
-	bool ret = pthread_create(&(thread->pthread), attrPtr, function, data) == 0;
+	ret = pthread_create(&(thread->pthread), attrPtr, function, data) == 0;
 	if(!ret)
 	{
 		fprintf(stderr, "[THREAD MANAGER] Error starting %s!\n", name);
-		free((void *)thread);
+		goto threadError;
 	}
+
+	if(pthread_setname_np(thread->pthread, name) != 0)
+		fprintf(stderr, "[THREAD MANAGER] Error setting name \"%s\"!\n", name);
+
+	if(threads == NULL)
+		threads = thread;
 	else
 	{
-		if(pthread_setname_np(thread->pthread, name) != 0)
-			fprintf(stderr, "[THREAD MANAGER] Error setting name \"%s\"!\n", name);
+		volatile MCP_THREAD *cur = threads;
+		while(cur->next != NULL)
+			cur = cur->next;
 
-		if(threads == NULL)
-			threads = thread;
-		else
-		{
-			volatile MCP_THREAD *cur = threads;
-			while(cur->next != NULL)
-				cur = cur->next;
-
-			cur->next = thread;
-		}
+		cur->next = thread;
 	}
 
+	goto threadExit;
+
+threadError:
+	ret = false;
+	free((void *)thread);
+threadExit:
 	lock = false;
 	return ret;
 }
