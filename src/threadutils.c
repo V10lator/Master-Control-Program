@@ -50,7 +50,7 @@ bool startThread(const char *name, bool realtime, void *(*function)(void *), voi
 	pthread_attr_t *attrPtr = &attr;
 	if(pthread_attr_init(attrPtr))
 	{
-		fprintf(stderr, "[THREAD MANAGER] Error initializing thread!");
+		fprintf(stderr, "[THREAD MANAGER] Error initializing thread %s!", name);
 		goto threadError;
 	}
 	if(realtime)
