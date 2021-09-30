@@ -1,4 +1,5 @@
 #include <limits.h>
+#include <malloc.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdatomic.h>
@@ -19,6 +20,7 @@
 #include "webui/server.h"
 
 #define SLICE_TIME 62500000 // 16 slices / sec
+#define RESERVED_MEM_SIZE (512 * 1024 * 1024) // 512 m reserved for malloc
 
 static volatile atomic_bool exiting = false;
 
@@ -41,6 +43,14 @@ static void signalHandler(int signal)
 	}
 }
 
+#define reserveMem()							\
+	do {								\
+		uint8_t *buffer = (uint8_t *)malloc(RESERVED_MEM_SIZE);	\
+		for(size_t i = 0; i < RESERVED_MEM_SIZE; i++)		\
+			buffer[i] = 0;					\
+		free((void *)buffer);					\
+	} while(0);
+
 int main()
 {
 	printf("[MASTER CONTROL PROGRAM] v" MCP_VERSION "\n");
@@ -52,6 +62,10 @@ int main()
 		fprintf(stderr, "[MAIN] Error locking memory: %m\n");
 		return 1;
 	}
+
+	mallopt(M_TRIM_THRESHOLD, -1);
+	mallopt(M_MMAP_MAX, 0);
+	reserveMem();
 
 	if(!initDisplay())
 		return 1;

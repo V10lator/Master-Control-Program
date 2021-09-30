@@ -45,11 +45,12 @@ bool startThread(const char *name, bool realtime, void *(*function)(void *), voi
 
 	pthread_attr_t attr;
 	pthread_attr_t *attrPtr;
-	struct sched_param param;
 	if(realtime)
 	{
-		param.sched_priority = 95;
-		if(pthread_attr_init(&attr) || pthread_attr_setschedpolicy(&attr, SCHED_FIFO) ||
+		struct sched_param param = {
+			.sched_priority = 95,
+		};
+		if(pthread_attr_init(&attr) || pthread_attr_setschedpolicy(&attr, SCHED_RR) ||
 			pthread_attr_setschedparam(&attr, &param) || pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED)
 		)
 		{
