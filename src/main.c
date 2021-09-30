@@ -20,7 +20,7 @@
 #include "webui/server.h"
 
 #define SLICE_TIME 62500000 // 16 slices / sec
-#define RESERVED_MEM_SIZE (512 * 1024 * 1024) // 512 m reserved for malloc
+#define RESERVED_MEM_SIZE (64 * 1024 * 1024) // 64 m reserved for malloc
 
 static volatile atomic_bool exiting = false;
 
