@@ -115,7 +115,7 @@ int main()
 
 	while(appRunning())
 	{
-		if(clock_gettime(CLOCK_MONOTONIC_RAW, &startTime) != 0)
+		if(clock_gettime(CLOCK_MONOTONIC_RAW, &startTime) == -1)
 		{
 			fprintf(stderr, "[MAIN] Error getting time!\n");
 			continue;
@@ -124,7 +124,7 @@ int main()
 		handleButtons();
 //		updateDisplay();
 
-		if(clock_gettime(CLOCK_MONOTONIC_RAW, &endTime) != 0)
+		if(clock_gettime(CLOCK_MONOTONIC_RAW, &endTime) == -1)
 		{
 			fprintf(stderr, "[MAIN] Error getting time!\n");
 			continue;
