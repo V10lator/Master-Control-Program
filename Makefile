@@ -1,5 +1,5 @@
 TARGET_EXEC := MCP
-VERSION := 0.0.1
+VERSION := 0.0.2
 
 CFLAGS := 	-march=native -mcpu=native -Ofast \
 		-flto=4 -fno-fat-lto-objects -fuse-linker-plugin \
