@@ -17,6 +17,8 @@ void *timer_thread_main(void *data)
 	signal(SIGUSR1, dummyHandler);
 
 	struct timespec timestamp;
+	long nsec;
+	time_t sec;
 	while(appRunning())
 	{
 		if(tryLockPlugStrong(plug))
@@ -31,9 +33,17 @@ void *timer_thread_main(void *data)
 		}
 
 
+		nsec = 1000000000;
+		sec = 59;
 		clock_gettime(CLOCK_REALTIME, &timestamp);
-		timestamp.tv_nsec = 1000000000ull - timestamp.tv_nsec;
-		timestamp.tv_sec = 59 - (timestamp.tv_sec % 60);
+
+		nsec -= timestamp.tv_nsec;
+		timestamp.tv_nsec = nsec;
+
+		timestamp.tv_sec %= 60;
+		sec -= timestamp.tv_sec;
+		timestamp.tv_sec = sec;
+
 		nanosleep(&timestamp, NULL);
 	}
 
