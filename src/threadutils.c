@@ -50,7 +50,7 @@ bool startThread(const char *name, bool realtime, void *(*function)(void *), voi
 		struct sched_param param = {
 			.sched_priority = 95,
 		};
-		if(pthread_attr_init(&attr) || pthread_attr_setschedpolicy(&attr, SCHED_RR) ||
+		if(pthread_attr_init(&attr) || pthread_attr_setschedpolicy(&attr, SCHED_FIFO) ||
 			pthread_attr_setschedparam(&attr, &param) || pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED)
 		)
 		{
