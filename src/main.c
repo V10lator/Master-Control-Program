@@ -65,7 +65,8 @@ int main()
 
 	mallopt(M_TRIM_THRESHOLD, -1);
 	mallopt(M_MMAP_MAX, 0);
-	reserveMem();
+//	We don't do malloc() inside of RT threads, so no need to prealloc.
+//	reserveMem();
 
 	if(!initDisplay())
 		return 1;
