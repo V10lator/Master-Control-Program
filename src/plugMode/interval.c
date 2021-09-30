@@ -6,12 +6,12 @@
 #include "plugmanager.h"
 #include "plugMode/interval.h"
 
-static volatile unsigned long long lastInterval[4] = { 0ull, 0ull, 0ull, 0ull };
+static unsigned long long lastInterval[4] = { 0ull, 0ull, 0ull, 0ull };
 
 bool setPlugInterval(int plug, const unsigned long long intervalOn, const unsigned long long intervalOff)
 {
 	struct timespec now;
-	if(clock_gettime(CLOCK_TAI, &now) == -1)
+	if(clock_gettime(CLOCK_MONOTONIC_RAW, &now) == -1)
 	{
 		fprintf(stderr, "[PLUG MANAGER INTERVAL] Error getting realtime!\n");
 		return false;
