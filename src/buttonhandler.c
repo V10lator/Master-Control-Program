@@ -17,6 +17,7 @@
 
 static uint16_t progMode = 0x0000;
 static bool oldButton[10];
+static const uint16_t btns[10] = { BUTTON_ONOFF, BUTTON_DAY_M, BUTTON_DAY_P, BUTTON_HOUR_M, BUTTON_HOUR_P, BUTTON_MIN_M, BUTTON_MIN_P, BUTTON_CHN_M, BUTTON_CHN_P, BUTTON_CANCEL };
 
 bool initButtonhandler()
 {
@@ -132,129 +133,30 @@ void handleButtons()
 		{
 			case BUTTON_PM_AUTO:
 				modeSwitchToAuto();
-				break;
+				return;
 			case BUTTON_PM_MANUAL:
 				modeSwitchToManual();
-				break;
+				return;
 			case BUTTON_PM_TIMESET:
 			case BUTTON_PM_ONCE:
 			case BUTTON_PM_WEEKLY1:
 			case BUTTON_PM_WEEKLY2:
 				return;
 		}
-		return;
 	}
 
 	// Real buttons
-	if(buttons & BUTTON_ONOFF)
-	{
-		if(!oldButton[0])
+	for(int i = 0; i < 10; i++)
+		if(buttons & btns[i])
 		{
-			tmp |= BUTTON_ONOFF;
-			oldButton[0] = true;
+			if(!oldButton[i])
+			{
+				tmp |= btns[i];
+				oldButton[i] = true;
+			}
 		}
-	}
-	else
-		oldButton[0] = false;
-
-	if(buttons & BUTTON_DAY_M)
-	{
-		if(!oldButton[1])
-		{
-			tmp |= BUTTON_DAY_M;
-			oldButton[1] = true;
-		}
-	}
-	else
-		oldButton[1] = false;
-
-	if(buttons & BUTTON_DAY_P)
-	{
-		if(!oldButton[2])
-		{
-			tmp |= BUTTON_DAY_P;
-			oldButton[2] = true;
-		}
-	}
-	else
-		oldButton[2] = false;
-
-	if(buttons & BUTTON_HOUR_M)
-	{
-		if(!oldButton[3])
-		{
-			tmp |= BUTTON_HOUR_M;
-			oldButton[3] = true;
-		}
-	}
-	else
-		oldButton[3] = false;
-
-	if(buttons & BUTTON_HOUR_P)
-	{
-		if(!oldButton[4])
-		{
-			tmp |= BUTTON_HOUR_P;
-			oldButton[4] = true;
-		}
-	}
-	else
-		oldButton[4] = false;
-
-	if(buttons & BUTTON_MIN_M)
-	{
-		if(!oldButton[5])
-		{
-			tmp |= BUTTON_MIN_M;
-			oldButton[5] = true;
-		}
-	}
-	else
-		oldButton[5] = false;
-
-	if(buttons & BUTTON_MIN_P)
-	{
-		if(!oldButton[6])
-		{
-			tmp |= BUTTON_MIN_P;
-			oldButton[6] = true;
-		}
-	}
-	else
-		oldButton[6] = false;
-
-	if(buttons & BUTTON_CHN_M)
-	{
-		if(!oldButton[7])
-		{
-			tmp |= BUTTON_CHN_M;
-			oldButton[7] = true;
-		}
-	}
-	else
-		oldButton[7] = false;
-
-	if(buttons & BUTTON_CHN_P)
-	{
-		if(!oldButton[8])
-		{
-			tmp |= BUTTON_CHN_P;
-			oldButton[8] = true;
-		}
-	}
-	else
-		oldButton[8] = false;
-
-	if(buttons & BUTTON_CANCEL)
-	{
-		if(!oldButton[9])
-		{
-			tmp |= BUTTON_CANCEL;
-			oldButton[9] = true;
-		}
-	}
-	else
-		oldButton[9] = false;
+		else
+			oldButton[i] = false;
 
 	switch(progMode)
 	{
