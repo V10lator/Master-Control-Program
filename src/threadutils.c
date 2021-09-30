@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <pthread.h>
 #include <sched.h>
 #include <signal.h>
@@ -9,6 +10,8 @@
 #include <unistd.h>
 
 #include "threadutils.h"
+
+#define RT_STACK_SIZE (128 * 1024) // 128 kB
 
 typedef struct MCP_THREAD MCP_THREAD;
 struct MCP_THREAD
@@ -51,7 +54,9 @@ bool startThread(const char *name, bool realtime, void *(*function)(void *), voi
 			.sched_priority = 95,
 		};
 		if(pthread_attr_init(&attr) || pthread_attr_setschedpolicy(&attr, SCHED_FIFO) ||
-			pthread_attr_setschedparam(&attr, &param) || pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED)
+			pthread_attr_setschedparam(&attr, &param) ||
+			pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED) ||
+			pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN + RT_STACK_SIZE)
 		)
 		{
 			fprintf(stderr, "[THREAD MANAGER] Error initializing realtime scheduling for %s!\n", name);
