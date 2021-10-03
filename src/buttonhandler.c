@@ -143,7 +143,7 @@ void handleButtons()
 			modeManual(filteredButtons);
 			break;
 		case BUTTON_PM_AUTO:
-			modeAuto(filteredButtons);
+			modeAuto();
 			break;
 		case BUTTON_PM_ONCE:
 			modeOnce(filteredButtons);

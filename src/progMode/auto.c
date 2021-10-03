@@ -5,7 +5,7 @@
 #include "plugmanager.h"
 #include "progMode/auto.h"
 
-void modeAuto(uint16_t buttons)
+void modeAuto()
 {
 	int displayState = 0;
 	for(int i = 0; i < 4; i++)
