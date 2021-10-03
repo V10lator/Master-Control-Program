@@ -28,7 +28,7 @@ bool initialize_mcp23017()
 	mcpFd = open("/dev/i2c-1", O_RDWR);
 	if(mcpFd < 0)
 	{
-		fprintf(stderr, "[MCP20317 DRIVER] Errorpening i2c!\n");
+		fprintf(stderr, "[MCP20317 DRIVER] Error opening i2c!\n");
 		return false;
 	}
 
