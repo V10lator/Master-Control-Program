@@ -59,7 +59,7 @@ void updateDisplay()
 
 bool initDisplay()
 {
-	if(displayInitialized)
+	if(displayInitialized || true /* TODO: We disable the whole display with this for now */)
 		return true;
 
 	printf("[DISPLAY MANAGER] Init: STUB!\n");
