@@ -18,6 +18,8 @@
 static uint16_t progMode = 0x0000;
 static bool oldButton[10];
 static const uint16_t btns[10] = { BUTTON_ONOFF, BUTTON_DAY_M, BUTTON_DAY_P, BUTTON_HOUR_M, BUTTON_HOUR_P, BUTTON_MIN_M, BUTTON_MIN_P, BUTTON_CHN_M, BUTTON_CHN_P, BUTTON_CANCEL };
+// Ordered by chance of being selected:
+static const uint16_t btns_pm[6] = { BUTTON_PM_AUTO, BUTTON_PM_MANUAL, BUTTON_PM_TIMESET, BUTTON_PM_ONCE, BUTTON_PM_WEEKLY1, BUTTON_PM_WEEKLY2 };
 
 bool initButtonhandler()
 {
@@ -61,121 +63,95 @@ static inline void modeWeekly(bool first, uint16_t buttons)
 void handleButtons()
 {
 	uint16_t buttons = read_mcp23017();
-	uint16_t tmp = 0x0000;
-	uint16_t oldProgMode = progMode;
 
-	// Program mode switch
+	// Check proram mode switch for invalid settings and reset it if needed
 	if(buttons & BUTTON_PM_TIMESET && buttons & BUTTON_PM_WEEKLY2)
 	{
 		// MP23017 error, try to reset
 		fprintf(stderr, "[BUTTON HANDLER] MCP23017 error detected!\n");
 		close_mcp23017();
 		initialize_mcp23017(); //TODO: Error handling
-	}
-	else if(buttons & BUTTON_PM_AUTO && progMode != BUTTON_PM_AUTO)
-	{
-		printf("[BUTTON HANDLER] Program mode switched to: Auto\n");
-		tmp = progMode;
-		progMode = BUTTON_PM_AUTO;
-	}
-	else if(buttons & BUTTON_PM_MANUAL && progMode != BUTTON_PM_MANUAL)
-	{
-		printf("[BUTTON HANDLER] Program mode switched to: Manual\n");
-		tmp = progMode;
-		progMode = BUTTON_PM_MANUAL;
-	}
-	else if(buttons & BUTTON_PM_TIMESET && progMode != BUTTON_PM_TIMESET)
-	{
-		printf("[BUTTON HANDLER] Program mode switched to: Time set\n");
-		tmp = progMode;
-		progMode = BUTTON_PM_TIMESET;
-	}
-	else if(buttons & BUTTON_PM_ONCE && progMode != BUTTON_PM_ONCE)
-	{
-		printf("[BUTTON HANDLER] Program mode switched to: Once\n");
-		tmp = progMode;
-		progMode = BUTTON_PM_ONCE;
-	}
-	else if(buttons & BUTTON_PM_WEEKLY1 && progMode != BUTTON_PM_WEEKLY1)
-	{
-		printf("[BUTTON HANDLER] Program mode switched to: Weekly 1\n");
-		tmp = progMode;
-		progMode = BUTTON_PM_WEEKLY1;
-	}
-	else if(buttons & BUTTON_PM_WEEKLY2 && progMode != BUTTON_PM_WEEKLY2) {
-		printf("[BUTTON HANDLER] Program mode switched to: Weekly 2\n");
-		tmp = progMode;
-		progMode = BUTTON_PM_WEEKLY2;
+		return;
 	}
 
-	if(tmp != 0x0000)
+	// Read current program mode switch state
+	for(int i = 0; i < 6; i++)
 	{
-		switch(tmp)
+		if(buttons & btns_pm[i] && progMode != btns_pm[i])
 		{
-			case BUTTON_PM_AUTO:
-				modeSwitchFromAuto();
-				break;
-			case BUTTON_PM_MANUAL:
-				modeSwitchFromManual();
-				break;
-			case BUTTON_PM_TIMESET:
-			case BUTTON_PM_ONCE:
-			case BUTTON_PM_WEEKLY1:
-			case BUTTON_PM_WEEKLY2:
-			default:
-				break;
-		}
-	}
+			printf("[BUTTON_HANDLER] Switching progam mode!\n");
+			// If prog mode switched and there is an old mode (won't be at boot) - Switch away from it
+			switch(progMode)
+			{
+				case BUTTON_PM_AUTO:
+					modeSwitchFromAuto();
+					break;
+				case BUTTON_PM_MANUAL:
+					modeSwitchFromManual();
+					break;
+				case BUTTON_PM_TIMESET:
+				case BUTTON_PM_ONCE:
+				case BUTTON_PM_WEEKLY1:
+				case BUTTON_PM_WEEKLY2:
+				default:
+					break;
+			}
 
-	if(progMode != oldProgMode)
-	{
-		switch(progMode)
-		{
-			case BUTTON_PM_AUTO:
-				modeSwitchToAuto();
-				return;
-			case BUTTON_PM_MANUAL:
-				modeSwitchToManual();
-				return;
-			case BUTTON_PM_TIMESET:
-			case BUTTON_PM_ONCE:
-			case BUTTON_PM_WEEKLY1:
-			case BUTTON_PM_WEEKLY2:
-				return;
+			// If program mode changed: Switch to new mode
+			// We o this outside of the previous if as we'll switch from no program mode at startup
+			progMode = btns_pm[i];
+			switch(progMode)
+			{
+				case BUTTON_PM_AUTO:
+					modeSwitchToAuto();
+					return;
+				case BUTTON_PM_MANUAL:
+					modeSwitchToManual();
+					return;
+				case BUTTON_PM_TIMESET:
+				case BUTTON_PM_ONCE:
+				case BUTTON_PM_WEEKLY1:
+				case BUTTON_PM_WEEKLY2:
+					return;
+			}
+
+			// No need to break the loop here as we already returned in the switch above
 		}
 	}
 
 	// Real buttons
+	uint16_t filteredButtons = 0x0000;
 	for(int i = 0; i < 10; i++)
 		if(buttons & btns[i])
 		{
 			if(!oldButton[i])
 			{
-				tmp |= btns[i];
+				filteredButtons |= btns[i];
 				oldButton[i] = true;
 			}
 		}
 		else
 			oldButton[i] = false;
 
+	// Handle filterred buttons to the current program mode
 	switch(progMode)
 	{
 		case BUTTON_PM_TIMESET:
-			modeTimeset(tmp);
+			modeTimeset(filteredButtons);
 			break;
 		case BUTTON_PM_MANUAL:
-			modeManual(tmp);
+			modeManual(filteredButtons);
 			break;
 		case BUTTON_PM_AUTO:
-			modeAuto(tmp);
+			modeAuto(filteredButtons);
 			break;
 		case BUTTON_PM_ONCE:
-			modeOnce(tmp);
+			modeOnce(filteredButtons);
 			break;
 		case BUTTON_PM_WEEKLY1:
-			modeWeekly(true, tmp);
+			modeWeekly(true, filteredButtons);
 			break;
 		case BUTTON_PM_WEEKLY2:
-			modeWeekly(false, tmp);
+			modeWeekly(false, filteredButtons);
 	}
 }

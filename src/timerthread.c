@@ -35,7 +35,11 @@ void *timer_thread_main(void *data)
 
 		nsec = 1000000000;
 		sec = 59;
-		clock_gettime(CLOCK_REALTIME, &timestamp);
+		if(clock_gettime(CLOCK_REALTIME, &timestamp) == -1)
+		{
+			stopThreads();
+			break;
+		}
 
 		nsec -= timestamp.tv_nsec;
 		timestamp.tv_nsec = nsec;
